@@ -8,6 +8,8 @@ board = "XIAO BLE"
 
 [rmk]
 ble_profiles_num = 5
+morse_max_num = 24
+macro_space_size = 512
 
 # controller_channel_pubs = 13 # default: 12
 # controller_channel_subs = 9 # default: 8
