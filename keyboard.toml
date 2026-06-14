@@ -81,8 +81,8 @@ force_awake = false
 smart_mode = true
 
 cpi = 800
-invert_x = true
-# invert_y = true
+# invert_x = true
+invert_y = true
 # swap_xy = true
 
 [split.peripheral.input_device]
