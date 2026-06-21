@@ -1,7 +1,6 @@
 use rmk::{
-    event::{LayerChangeEvent, PointingProcessorEvent, publish_event},
-    input_device::pointing::{PointingMode, CursorConfig, SniperConfig, ScrollConfig, CaretConfig},
-    types::keycode::HidKeyCode,
+    event::{publish_event, LayerChangeEvent, PointingProcessorEvent},
+    input_device::pointing::{CursorConfig, PointingMode, ScrollConfig},
 };
 use rmk::macros::processor;
 
@@ -16,40 +15,8 @@ impl PointingProcessorController {
 
     async fn on_layer_change_event(&mut self, event: LayerChangeEvent) {
         match event.0 {
-            0 => {
-                publish_event(PointingProcessorEvent {
-                    device_id: 0,
-                    mode: PointingMode::Cursor(CursorConfig::default()),
-                });
-            }
-            1 => {
-                publish_event(PointingProcessorEvent {
-                    device_id: 0,
-                    mode: PointingMode::Caret(CaretConfig {
-                        disable_x: false,
-                        disable_y: false,
-                        invert_x: false,
-                        invert_y: false,
-                        threshold: 100,
-                        keycode_up: HidKeyCode::Up,
-                        keycode_down: HidKeyCode::Down,
-                        keycode_left: HidKeyCode::Left,
-                        keycode_right: HidKeyCode::Right,
-                    }),
-                });
-            }
-            2 => {
-                publish_event(PointingProcessorEvent {
-                    device_id: 0,
-                    mode: PointingMode::Sniper(SniperConfig {
-                        multiplier: 1,
-                        divisor: 8,
-                        invert_x: false,
-                        invert_y: false,
-                    }),
-                });
-            }
-            6 => {
+            // Layer 3: trackball scroll mode
+            3 => {
                 publish_event(PointingProcessorEvent {
                     device_id: 0,
                     mode: PointingMode::Scroll(ScrollConfig {
@@ -62,7 +29,14 @@ impl PointingProcessorController {
                     }),
                 });
             }
-            _ => {}
+
+            // All other layers: normal cursor mode
+            _ => {
+                publish_event(PointingProcessorEvent {
+                    device_id: 0,
+                    mode: PointingMode::Cursor(CursorConfig::default()),
+                });
+            }
         }
     }
 }
