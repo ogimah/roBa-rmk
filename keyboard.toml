@@ -8,7 +8,7 @@ board = "XIAO BLE"
 
 [rmk]
 ble_profiles_num = 5
-morse_max_num = 24
+morse_max_num = 32
 macro_space_size = 512
 
 # controller_channel_pubs = 13 # default: 12
@@ -98,7 +98,7 @@ reverse = false
 
 [storage]
 # Uncomment to clear keymap data modified via Vial
-clear_layout = true
+# clear_layout = true
 
 # Uncomment to clear ALL storage (keymap and BLE bonds)
 # clear_storage = true
