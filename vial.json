@@ -50,6 +50,26 @@
             "name": "SWITCH",
             "title": "Switch default output mode between USB/BLE",
             "shortName": "Switch\nOutput"
+        },
+        {
+            "name": "GESTURE_LEFT",
+            "title": "Trackball gesture left",
+            "shortName": "Ges\nL"
+        },
+        {
+            "name": "GESTURE_RIGHT",
+            "title": "Trackball gesture right",
+            "shortName": "Ges\nR"
+        },
+        {
+            "name": "GESTURE_UP",
+            "title": "Trackball gesture up",
+            "shortName": "Ges\nU"
+        },
+        {
+            "name": "GESTURE_DOWN",
+            "title": "Trackball gesture down",
+            "shortName": "Ges\nD"
         }
     ],
     "layouts": {
