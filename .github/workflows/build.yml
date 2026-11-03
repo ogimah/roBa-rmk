@@ -23,16 +23,20 @@ jobs:
       - name: Install clang dependencies
         run: sudo apt-get update && sudo apt-get install -y libclang-dev
 
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+      - name: Install Rust 1.85.1 toolchain
+        uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: 1.85.1
           targets: thumbv7em-none-eabihf
 
+      - name: Show rustc version
+        run: rustc --version
+
       - name: Install cargo-make
-        run: cargo install cargo-make
+        run: cargo +1.85.1 install cargo-make --locked
 
       - name: Build UF2
-        run: cargo make uf2
+        run: cargo +1.85.1 make uf2
 
       - name: Calculate hash
         run: |
