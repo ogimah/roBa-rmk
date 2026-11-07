@@ -61,6 +61,10 @@ xz2 = "0.1.7"
 json = "0.12"
 const-gen = "1.6"
 
+# Keep the pinned RMK revision; only fix its async matrix pin projection.
+[patch."https://github.com/HaoboGu/rmk"]
+rmk = { path = "vendor/rmk" }
+
 # Split keyboard example
 [[bin]]
 name = "central"
