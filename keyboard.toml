@@ -6,6 +6,9 @@ product_id = 0x4643
 manufacturer = "RMK"
 board = "XIAO BLE"
 
+[host]
+unlock_keys = [[0, 6], [0, 10]]
+
 [rmk]
 ble_profiles_num = 5
 morse_max_num = 32
