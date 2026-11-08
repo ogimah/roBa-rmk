@@ -1,0 +1,12 @@
+[package]
+name = "roba-gesture-host-tests"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[dependencies]
+rmk = { git = "https://github.com/HaoboGu/rmk", rev = "23c0960962ada901780b3c8d36be21a91c3f1bbc", default-features = false, features = ["std", "log", "vial", "vial_lock", "async_matrix"] }
+embassy-time = { version = "0.5", features = ["mock-driver", "generic-queue-128"] }
+critical-section = { version = "1.2", features = ["std"] }
