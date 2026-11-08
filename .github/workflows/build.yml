@@ -3,9 +3,8 @@ on:
   workflow_call:
   workflow_dispatch:
   pull_request:
-#   push:
-#     paths:
-#       - "**"
+  push:
+    branches: [feat/gesture-vial-live]
 
 jobs:
   # build:
@@ -19,6 +18,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 0
 
       - name: Install clang dependencies
         run: sudo apt-get update && sudo apt-get install -y libclang-dev
@@ -26,13 +27,28 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
+          toolchain: 1.96.0
           targets: thumbv7em-none-eabihf
+          components: rust-src, rustfmt, llvm-tools
 
-      - name: Install cargo-make
-        run: cargo install cargo-make
+      - name: Check configuration preservation and layout migration
+        run: python3 -m unittest discover -s tests -p 'test_*.py' -v
+
+      - name: Test gesture routing with real RMK on host
+        run: cargo test --locked --manifest-path tests/gesture-host/Cargo.toml --target x86_64-unknown-linux-gnu -- --test-threads=1
+
+      - name: Install tested firmware tools
+        run: |
+          cargo install --locked cargo-make --version 0.37.24
+          cargo install --locked flip-link --version 0.1.12
+          cargo install --locked cargo-binutils --version 0.4.0
+          cargo install --locked cargo-hex-to-uf2 --version 0.1.2
 
       - name: Build UF2
         run: cargo make uf2
+
+      - name: Check dependency lockfile was preserved
+        run: git diff --exit-code -- Cargo.lock
 
       - name: Calculate hash
         run: |
