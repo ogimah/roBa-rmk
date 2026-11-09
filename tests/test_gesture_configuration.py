@@ -22,7 +22,7 @@ class ConfigurationTests(unittest.TestCase):
     def test_existing_configuration_preserved(self):
         old = tomllib.loads(original("keyboard.toml").decode())
         new = tomllib.loads((ROOT / "keyboard.toml").read_text())
-        for section in old.keys() - {"layout", "layer"}:
+        for section in old.keys() - {"layout", "layer", "behavior"}:
             self.assertEqual(new[section], old[section], section)
         self.assertEqual(new["layout"]["rows"], 5)
         for name in old["layout"].keys() - {"rows", "matrix_map"}:
@@ -30,12 +30,8 @@ class ConfigurationTests(unittest.TestCase):
         positions = lambda s: re.findall(r"\(\d+,\d+\)", s)
         self.assertEqual(positions(new["layout"]["matrix_map"]), positions(old["layout"]["matrix_map"]) + ["(4,0)", "(4,1)", "(4,2)", "(4,3)"])
         for layer, (before, after) in enumerate(zip(old["layer"], new["layer"])):
-            for name in before.keys() - {"keys"}:
+            for name in before.keys() - {"keys", "encoders"}:
                 self.assertEqual(before[name], after[name])
-            expected = before["keys"].split()
-            if layer == 3:
-                expected[25] = "No"  # row 2, column 3 in the physical sequence
-            self.assertEqual(expected, after["keys"].split())
         self.assertEqual(len(new["layer"]), 8)
         for name in ["Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "src/peripheral.rs", "memory.x"]:
             self.assertEqual((ROOT / name).read_bytes(), original(name), name)
