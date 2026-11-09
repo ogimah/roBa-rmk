@@ -1,5 +1,10 @@
 # Layer 3 + V trackball gestures
 
+For the build with the user's layout already preloaded, see
+[Preloaded defaults](user-defaults.md). In that build restoring the old `.vil`
+and setting V to No again is unnecessary: those are compiled defaults already.
+Only the four gesture outputs remain unassigned by request.
+
 This branch starts from the user's working unlock build,
 `24dbb3cfb997b61dc21640dd33017665412647b6`. Main, dependency versions,
 Rust 1.96.0, physical wiring, Bluetooth settings, unlock keys and encoder
