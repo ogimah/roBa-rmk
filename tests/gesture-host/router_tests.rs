@@ -412,3 +412,165 @@ fn live_trigger_remap_transparency_multiple_holds_and_release_after_edit() {
     assert!(keys.iter().any(|(_, x)| x.contains(&(HidKeyCode::V as u8))));
     assert_eq!(keys.last(), Some(&(0, [0; 6])));
 }
+
+#[test]
+fn three_live_triggers_route_all_twelve_outputs_and_conflicts_capture_safely() {
+    use crate::gesture::OUTPUT_POSITIONS;
+    embassy_time::MockDriver::get().reset();
+    rmk::state::set_usb_state(UsbState::Configured);
+    reports();
+    let mut keys = [[[KeyAction::No; 11]; 5]; 8];
+    let codes = [
+        HidKeyCode::A,
+        HidKeyCode::B,
+        HidKeyCode::C,
+        HidKeyCode::D,
+        HidKeyCode::E,
+        HidKeyCode::F,
+        HidKeyCode::G,
+        HidKeyCode::H,
+        HidKeyCode::I,
+        HidKeyCode::J,
+        HidKeyCode::K,
+        HidKeyCode::L,
+    ];
+    for bank in 0..3 {
+        keys[0][1][bank + 1] = KeyAction::Single(Action::User(TRIGGER_USER_ID + bank as u8));
+        for (direction, &(row, col)) in OUTPUT_POSITIONS[bank].iter().enumerate() {
+            keys[0][row as usize][col as usize] = key(codes[4 * bank + direction]);
+        }
+    }
+    let mut data = KeymapData::new(keys);
+    let mut behavior = BehaviorConfig::default();
+    let positional = PositionalConfig::default();
+    let map = finish(KeyMap::new(&mut data, &mut behavior, &positional));
+    let ctx = KeyboardContext::new(&map);
+    let mut keyboard = Keyboard::new(&map);
+    let trigger = Cell::new(Trigger::default());
+    let mut monitor = GestureTriggerMonitor::new(&trigger);
+    let cfg = || PointingProcessorConfig {
+        device_id: 0,
+        ..Default::default()
+    };
+    let mut router =
+        GesturePointingProcessor::new(PointingProcessor::new(&map, cfg()), cfg(), &map, &trigger);
+    let (mut k, mut m, mut r) = (
+        pin!(keyboard.run()),
+        pin!(monitor.run()),
+        pin!(router.run()),
+    );
+    let mut cx = Context::from_waker(Waker::noop());
+    let mut ticks = |n| {
+        for _ in 0..n {
+            assert!(k.as_mut().poll(&mut cx).is_pending());
+            assert!(m.as_mut().poll(&mut cx).is_pending());
+            assert!(r.as_mut().poll(&mut cx).is_pending());
+            embassy_time::MockDriver::get().advance(embassy_time::Duration::from_millis(1));
+        }
+    };
+    ticks(1);
+    for bank in 0..3 {
+        finish(publish_event_async(KeyboardEvent::key(1, bank + 1, true)));
+        ticks(20);
+        assert_eq!(trigger.get().bank, bank);
+        for (dir, (x, y)) in [(-31, 0), (31, 0), (0, -31), (0, 31)]
+            .into_iter()
+            .enumerate()
+        {
+            embassy_time::MockDriver::get().advance(embassy_time::Duration::from_millis(150));
+            finish(publish_event_async(motion(x, y)));
+            ticks(40);
+            let (keys, mouse) = reports();
+            assert!(mouse.is_empty());
+            let nonzero: Vec<_> = keys
+                .iter()
+                .flat_map(|(_, k)| k.iter().copied())
+                .filter(|&x| x != 0)
+                .collect();
+            assert_eq!(
+                nonzero,
+                vec![codes[bank as usize * 4 + dir] as u8],
+                "wrong bank/direction or duplicate output"
+            );
+            assert_eq!(keys.last(), Some(&(0, [0; 6])));
+        }
+        finish(publish_event_async(KeyboardEvent::key(1, bank + 1, false)));
+        ticks(20);
+        assert!(!trigger.get().pressed);
+    }
+    // Both new banks also resolve output edits made through the live host API.
+    for bank in 1..3u8 {
+        let (row, col) = OUTPUT_POSITIONS[bank as usize][3];
+        finish(ctx.set_action(0, row, col, key(HidKeyCode::F24)));
+        finish(publish_event_async(KeyboardEvent::key(1, bank + 1, true)));
+        ticks(20);
+        embassy_time::MockDriver::get().advance(embassy_time::Duration::from_millis(150));
+        finish(publish_event_async(motion(0, 31)));
+        ticks(40);
+        let (keys, mouse) = reports();
+        assert!(mouse.is_empty());
+        assert!(
+            keys.iter()
+                .any(|(_, k)| k.contains(&(HidKeyCode::F24 as u8)))
+        );
+        assert_eq!(keys.last(), Some(&(0, [0; 6])));
+        finish(publish_event_async(KeyboardEvent::key(1, bank + 1, false)));
+        ticks(20);
+    }
+    // Switching banks discards an unfinished stroke. A conflicting hold captures
+    // motion but cannot fire either bank or leak cursor motion.
+    finish(publish_event_async(KeyboardEvent::key(1, 1, true)));
+    ticks(20);
+    finish(publish_event_async(motion(30, 0)));
+    ticks(20);
+    finish(publish_event_async(KeyboardEvent::key(1, 2, true)));
+    ticks(20);
+    assert_eq!(trigger.get().bank, BANK_COUNT);
+    finish(publish_event_async(motion(100, 100)));
+    ticks(20);
+    assert_eq!(reports(), (vec![], vec![]));
+    finish(publish_event_async(KeyboardEvent::key(1, 1, false)));
+    ticks(20);
+    assert_eq!(trigger.get().bank, 1);
+    finish(publish_event_async(motion(1, 0)));
+    ticks(20);
+    assert_eq!(reports(), (vec![], vec![]));
+    embassy_time::MockDriver::get().advance(embassy_time::Duration::from_millis(150));
+    finish(publish_event_async(motion(30, 0)));
+    ticks(40);
+    let (keys, mouse) = reports();
+    assert!(mouse.is_empty());
+    assert!(keys.iter().any(|(_, k)| k.contains(&(HidKeyCode::F as u8))));
+    assert_eq!(keys.last(), Some(&(0, [0; 6])));
+    finish(publish_event_async(KeyboardEvent::key(1, 2, false)));
+    ticks(20);
+    finish(publish_event_async(motion(5, -6)));
+    ticks(20);
+    assert_eq!(reports().1, vec![(5, -6)]);
+}
+
+#[test]
+fn virtual_outputs_and_reserved_ble_codes_cannot_arm_any_bank() {
+    let trigger = Cell::new(Trigger::default());
+    let mut monitor = GestureTriggerMonitor::new(&trigger);
+    for bank in 0..3u8 {
+        for &(row, col) in &crate::gesture::OUTPUT_POSITIONS[bank as usize] {
+            let e = KeyboardEvent::key(row, col, true);
+            finish(monitor.on_keyboard_event(e));
+            finish(monitor.on_action_event(ActionEvent {
+                action: Action::User(TRIGGER_USER_ID + bank),
+                keyboard_event: e,
+            }));
+            assert!(!trigger.get().pressed);
+        }
+    }
+    let e = KeyboardEvent::key(1, 1, true);
+    finish(monitor.on_keyboard_event(e));
+    for id in 0..10 {
+        finish(monitor.on_action_event(ActionEvent {
+            action: Action::User(id),
+            keyboard_event: e,
+        }));
+        assert!(!trigger.get().pressed);
+    }
+}

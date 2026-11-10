@@ -1,4 +1,6 @@
-use crate::gesture::{Gesture, OUTPUT_ROW, Route, TRIGGER_USER_ID, Trigger, logical_motion};
+use crate::gesture::{
+    BANK_COUNT, Gesture, Route, TRIGGER_USER_ID, Trigger, logical_motion, output_position,
+};
 use core::cell::Cell;
 use rmk::{
     core_traits::Runnable,
@@ -21,19 +23,19 @@ use rmk::{
 pub struct GestureTriggerMonitor<'a> {
     trigger: &'a Cell<Trigger>,
     down: [bool; 44],
-    armed: [bool; 44],
+    armed: [u8; 44],
 }
 impl<'a> GestureTriggerMonitor<'a> {
     pub fn new(trigger: &'a Cell<Trigger>) -> Self {
         Self {
             trigger,
             down: [false; 44],
-            armed: [false; 44],
+            armed: [0; 44],
         }
     }
     fn index(event: KeyboardEvent) -> Option<usize> {
         if let KeyboardEventPos::Key(pos) = event.pos {
-            if pos.row < 4 && pos.col < 11 {
+            if pos.row < 4 && pos.col < 11 && (pos.row, pos.col) != (0, 5) {
                 return Some(usize::from(pos.row) * 11 + usize::from(pos.col));
             }
         }
@@ -41,14 +43,19 @@ impl<'a> GestureTriggerMonitor<'a> {
     }
     fn update(&self) {
         let mut t = self.trigger.get();
-        t.set_pressed(self.armed.iter().any(|&x| x));
+        let mask = self
+            .armed
+            .iter()
+            .filter(|&&bank| bank != 0)
+            .fold(0, |mask, &bank| mask | (1 << (bank - 1)));
+        t.set_mask(mask);
         self.trigger.set(t);
     }
     async fn on_keyboard_event(&mut self, event: KeyboardEvent) {
         if let Some(i) = Self::index(event) {
             self.down[i] = event.pressed;
             if !event.pressed {
-                self.armed[i] = false;
+                self.armed[i] = 0;
             }
             self.update();
         }
@@ -56,9 +63,11 @@ impl<'a> GestureTriggerMonitor<'a> {
     async fn on_action_event(&mut self, event: ActionEvent) {
         if let Some(i) = Self::index(event.keyboard_event) {
             if !event.keyboard_event.pressed {
-                self.armed[i] = false;
-            } else if event.action == Action::User(TRIGGER_USER_ID) && self.down[i] {
-                self.armed[i] = true;
+                self.armed[i] = 0;
+            } else if let Action::User(id) = event.action {
+                if (TRIGGER_USER_ID..TRIGGER_USER_ID + BANK_COUNT).contains(&id) && self.down[i] {
+                    self.armed[i] = id - TRIGGER_USER_ID + 1;
+                }
             }
             self.update();
         }
@@ -142,9 +151,10 @@ impl<'a> GesturePointingProcessor<'a> {
             self.config.invert_y,
             self.config.swap_xy,
         );
+        let trigger = self.trigger.get();
         match self.gesture.motion(
             self.keymap.active_layer(),
-            self.trigger.get(),
+            trigger,
             x,
             y,
             embassy_time::Instant::now().as_millis(),
@@ -157,8 +167,10 @@ impl<'a> GesturePointingProcessor<'a> {
             Route::Captured(None) => {}
             Route::Captured(Some(dir)) => {
                 // RMK resolves the live Vial binding and caches its layer for release.
-                publish_event_async(KeyboardEvent::key(OUTPUT_ROW, dir.col(), true)).await;
-                publish_event_async(KeyboardEvent::key(OUTPUT_ROW, dir.col(), false)).await;
+                if let Some((row, col)) = output_position(trigger.bank, dir) {
+                    publish_event_async(KeyboardEvent::key(row, col, true)).await;
+                    publish_event_async(KeyboardEvent::key(row, col, false)).await;
+                }
             }
         }
     }
