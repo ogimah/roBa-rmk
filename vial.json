@@ -60,6 +60,16 @@
             "name": "GESTURE_TRIGGER",
             "title": "Gesture Trigger (hold and move trackball)",
             "shortName": "Gesture\nTrigger"
+        },
+        {
+            "name": "GESTURE_TRIGGER_2",
+            "title": "Gesture Trigger 2 (middle cross)",
+            "shortName": "Gesture\nTrigger 2"
+        },
+        {
+            "name": "GESTURE_TRIGGER_3",
+            "title": "Gesture Trigger 3 (right cross)",
+            "shortName": "Gesture\nTrigger 3"
         }
     ],
     "layouts": {
@@ -90,9 +100,9 @@
             [{"x":  -0.5, "y":   -0.5, "r":  20, "rx": 5.951, "ry": 4.409}, "3,5"],
             [{"x":  -0.5, "y":   -0.5, "r": -15, "rx": 8.059, "ry":  4.41}, "3,8"],
             [{"x":  -0.5, "y":   -0.5, "r": -10, "rx": 9.158, "ry": 4.116}, "3,9"],
-            [{"r": 0, "rx": 0, "ry": 0, "x": 6, "y": 6}, "4,2"],
-            [{"x": 5}, "4,0", {"x": 1}, "4,1"],
-            [{"x": 6}, "4,3"]
+            [{"r": 0, "rx": 0, "ry": 0, "x": 6, "y": 6}, "4,2", {"x": 3}, "4,6", {"x": 3}, "4,10"],
+            [{"x": 5}, "4,0", {"x": 1}, "4,1", {"x": 1}, "4,4", {"x": 1}, "4,5", {"x": 1}, "4,8", {"x": 1}, "4,9"],
+            [{"x": 6}, "4,3", {"x": 3}, "4,7", {"x": 3}, "0,5"]
         ]
     }
 }

@@ -24,9 +24,9 @@ class UserDefaultsTests(unittest.TestCase):
             actual = config["keys"].split()
             self.assertEqual(len(actual), len(positions))
             for (r, c), code in zip(positions, actual):
-                expected = "No" if r == 4 else "User10" if (layer, r, c) == (3, 2, 3) else imp.key(self.source["layout"][layer][r][c])
+                expected = "No" if (r == 4 or (r,c) == (0,5)) else "User10" if (layer, r, c) == (3, 2, 3) else imp.key(self.source["layout"][layer][r][c])
                 self.assertEqual(code, expected, (layer, r, c))
-                count += r < 4
+                count += r < 4 and (r,c) != (0,5)
             self.assertEqual(config["encoders"], [[imp.key(x) for x in self.source["encoder_layout"][layer][0]]])
         self.assertEqual(count, 344)
 
@@ -56,7 +56,7 @@ class UserDefaultsTests(unittest.TestCase):
     def test_virtual_keys_empty_and_render_is_repeatable(self):
         self.assertEqual(imp.render(self.source, self.text), self.text)
         for layer in self.config["layer"]:
-            self.assertEqual(layer["keys"].split()[-4:], ["No"] * 4)
+            self.assertEqual(layer["keys"].split()[-12:], ["No"] * 12)
         self.assertEqual(self.config["layer"][3]["keys"].split()[25], "User10")
 
     def test_conversion_rejects_unknown_codes_and_handles_jis_modifiers(self):

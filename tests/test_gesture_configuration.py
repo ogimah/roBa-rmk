@@ -28,7 +28,7 @@ class ConfigurationTests(unittest.TestCase):
         for name in old["layout"].keys() - {"rows", "matrix_map"}:
             self.assertEqual(new["layout"][name], old["layout"][name])
         positions = lambda s: re.findall(r"\(\d+,\d+\)", s)
-        self.assertEqual(positions(new["layout"]["matrix_map"]), positions(old["layout"]["matrix_map"]) + ["(4,0)", "(4,1)", "(4,2)", "(4,3)"])
+        self.assertEqual(positions(new["layout"]["matrix_map"]), positions(old["layout"]["matrix_map"]) + [f"(4,{c})" for c in range(11)] + ["(0,5)"])
         for layer, (before, after) in enumerate(zip(old["layer"], new["layer"])):
             for name in before.keys() - {"keys", "encoders"}:
                 self.assertEqual(before[name], after[name])
@@ -44,12 +44,12 @@ class ConfigurationTests(unittest.TestCase):
     def test_vial_coordinates_and_custom_codes_preserved(self):
         old = json.loads(original("vial.json"))
         new = json.loads((ROOT / "vial.json").read_text())
-        self.assertEqual([x["name"] for x in new["customKeycodes"][9:]], ["CLR_PEER", "GESTURE_TRIGGER"])
+        self.assertEqual([x["name"] for x in new["customKeycodes"][9:]], ["CLR_PEER", "GESTURE_TRIGGER", "GESTURE_TRIGGER_2", "GESTURE_TRIGGER_3"])
         self.assertEqual(new["matrix"], {"rows": 5, "cols": 11})
         self.assertEqual(new["customKeycodes"][:9], old["customKeycodes"])
         self.assertEqual(new["layouts"]["keymap"][:-3], old["layouts"]["keymap"])
         added = [item for row in new["layouts"]["keymap"][-3:] for item in row if isinstance(item, str)]
-        self.assertCountEqual(added, ["4,0", "4,1", "4,2", "4,3"])
+        self.assertCountEqual(added, [f"4,{c}" for c in range(11)] + ["0,5"])
 
     def test_all_tasks_are_awaited_and_original_motion_is_not_run_twice(self):
         source = (ROOT / "src/central.rs").read_text()

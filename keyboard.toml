@@ -115,6 +115,8 @@ matrix_map = """
 (2,0) (2,1) (2,2) (2,3) (2,4) (2,5)     (3,7) (2,6) (2,7) (2,8) (2,9) (2,10)
 (3,0) (3,1) (3,2) (3,3) (3,4) (3,5)     (3,8) (3,9)                   (3,10)
 (4,0) (4,1) (4,2) (4,3)
+(4,4) (4,5) (4,6) (4,7)
+(4,8) (4,9) (4,10) (0,5)
 """
 layers = 8
 
@@ -489,6 +491,8 @@ A  S  D  F  G  _  LT(4,International4)  H  J  K  L  TD(4)
 Z  X  C  V  B  TD(2)  International5  N  M  Comma  Dot  TD(3)
 TD(0)  TD(1)  LAlt  LT(3,Tab)  LT(2,Escape)  LT(1,Space)  Enter  Backspace  Delete
 No  No  No  No
+No  No  No  No
+No  No  No  No
 """
 encoders = [["MouseWheelDown", "MouseWheelUp"]]
 
@@ -499,6 +503,8 @@ F1  F2  MouseWheelDown  F3  F5  F6  F7  MouseBtn4  F9  F10
 TD(5)  MouseWheelLeft  MouseWheelUp  MouseWheelRight  TD(6)  _  _  WM(Tab,LCtrl|LAlt)  MouseBtn1  MouseBtn3  MouseBtn2  Macro1
 WM(V,LGui)  WM(X,LCtrl)  WM(C,LCtrl)  TD(7)  WM(Semicolon,LCtrl|LShift)  _  _  TD(8)  TD(9)  MouseBtn5  No  No
 _  _  _  _  _  _  _  _  _
+No  No  No  No
+No  No  No  No
 No  No  No  No
 """
 encoders = [["_", "_"]]
@@ -511,6 +517,8 @@ TD(19)  Left  Down  Right  KpAsterisk  _  _  TD(12)  Kp4  Kp5  Kp6  TD(17)
 WM(PageUp,LCtrl)  WM(PageDown,LCtrl)  TD(13)  WM(Minus,LShift)  KpSlash  _  _  Kp0  Kp1  Kp2  Kp3  TD(18)
 _  _  _  _  _  _  _  _  _
 No  No  No  No
+No  No  No  No
+No  No  No  No
 """
 encoders = [["_", "_"]]
 
@@ -521,6 +529,8 @@ TD(29)  _  _  TD(30)  _  _  _  _  _  _
 TD(28)  TD(27)  TD(26)  TD(25)  TD(24)  _  _  _  TD(15)  TD(16)  TD(21)  _
 _  _  _  User10  _  _  _  _  International1  _  _  _
 _  _  _  _  _  _  _  _  _
+No  No  No  No
+No  No  No  No
 No  No  No  No
 """
 encoders = [["_", "_"]]
@@ -533,6 +543,8 @@ _  _  Reboot  Bootloader  _  _  _  _  User4  _  _  _
 _  _  _  _  _  _  _  User0  User1  User2  User3  _
 _  _  _  _  _  _  _  _  _
 No  No  No  No
+No  No  No  No
+No  No  No  No
 """
 encoders = [["_", "_"]]
 
@@ -543,6 +555,8 @@ _  _  _  _  _  _  _  _  _  _
 _  _  _  _  _  _  _  _  _  _  _  _
 _  _  _  _  _  _  _  _  _  _  _  _
 _  _  _  _  _  _  _  _  _
+No  No  No  No
+No  No  No  No
 No  No  No  No
 """
 encoders = [["_", "_"]]
@@ -555,6 +569,8 @@ _  _  _  _  _  _  _  _  _  _  _  _
 _  _  _  _  _  _  _  _  _  _  _  _
 _  _  _  _  _  _  _  _  _
 No  No  No  No
+No  No  No  No
+No  No  No  No
 """
 encoders = [["_", "_"]]
 
@@ -565,6 +581,8 @@ _  _  _  _  _  _  _  User7  User8  _
 _  _  Reboot  Bootloader  _  _  _  _  User4  _  _  _
 _  _  _  _  _  _  _  User0  User1  User2  User3  _
 _  _  _  _  _  _  _  _  _
+No  No  No  No
+No  No  No  No
 No  No  No  No
 """
 encoders = [["_", "_"]]

@@ -1,6 +1,20 @@
 //! Hardware-independent capture state. Distances are sensor counts, not pixels.
 pub const TRIGGER_USER_ID: u8 = 10;
+#[cfg(test)]
 pub const OUTPUT_ROW: u8 = 4;
+pub const BANK_COUNT: u8 = 3;
+// Keep the existing 5x11 storage shape: 11 virtual row-4 cells plus the
+// unwired (0,5) position omitted from the original physical matrix map.
+pub const OUTPUT_POSITIONS: [[(u8, u8); 4]; 3] = [
+    [(4, 0), (4, 1), (4, 2), (4, 3)],
+    [(4, 4), (4, 5), (4, 6), (4, 7)],
+    [(4, 8), (4, 9), (4, 10), (0, 5)],
+];
+pub fn output_position(bank: u8, direction: Direction) -> Option<(u8, u8)> {
+    OUTPUT_POSITIONS
+        .get(bank as usize)
+        .map(|positions| positions[direction.col() as usize])
+}
 pub const THRESHOLD: i32 = 30;
 pub const COOLDOWN_MS: u64 = 150;
 
@@ -25,12 +39,24 @@ impl Direction {
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Trigger {
     pub pressed: bool,
+    pub bank: u8,
     pub epoch: u32,
 }
 impl Trigger {
+    #[cfg(test)]
     pub fn set_pressed(&mut self, pressed: bool) {
-        if self.pressed != pressed {
+        self.set_mask(u8::from(pressed));
+    }
+    pub fn set_mask(&mut self, mask: u8) {
+        let pressed = mask != 0;
+        let bank = if mask.count_ones() == 1 {
+            mask.trailing_zeros() as u8
+        } else {
+            BANK_COUNT
+        };
+        if self.pressed != pressed || self.bank != bank {
             self.pressed = pressed;
+            self.bank = bank;
             self.epoch = self.epoch.wrapping_add(1);
         }
     }
@@ -64,6 +90,9 @@ impl Gesture {
         self.epoch = trigger.epoch;
         if !active {
             return Route::Cursor;
+        }
+        if trigger.bank >= BANK_COUNT {
+            return Route::Captured(None);
         }
         self.x = self.x.saturating_add(x).clamp(-1_000_000, 1_000_000);
         self.y = self.y.saturating_add(y).clamp(-1_000_000, 1_000_000);
@@ -121,6 +150,7 @@ mod tests {
     fn held() -> Trigger {
         Trigger {
             pressed: true,
+            bank: 0,
             epoch: 1,
         }
     }
@@ -185,6 +215,7 @@ mod tests {
                 3,
                 Trigger {
                     pressed: false,
+                    bank: 0,
                     epoch: 2
                 },
                 0,
@@ -198,6 +229,7 @@ mod tests {
                 3,
                 Trigger {
                     pressed: true,
+                    bank: 0,
                     epoch: 3
                 },
                 1,
@@ -243,6 +275,7 @@ mod tests {
     fn trigger_epoch_wraps() {
         let mut t = Trigger {
             pressed: false,
+            bank: 0,
             epoch: u32::MAX,
         };
         assert!(!t.pressed);
