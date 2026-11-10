@@ -83,6 +83,7 @@ fn real_rmk_route_vial_binding_modifiers_macros_and_release() {
     rmk::state::set_usb_state(UsbState::Configured);
     let mut keys = [[[KeyAction::No; 11]; 5]; 8];
     keys[0][0][0] = KeyAction::Single(Action::LayerOn(3));
+    keys[3][2][3] = KeyAction::Single(Action::User(TRIGGER_USER_ID));
     keys[0][2][3] = key(HidKeyCode::V); // outside layer 3 V is still an ordinary key
     for (col, k) in [HidKeyCode::A, HidKeyCode::B, HidKeyCode::C, HidKeyCode::D]
         .into_iter()
@@ -121,6 +122,10 @@ fn real_rmk_route_vial_binding_modifiers_macros_and_release() {
         "layer 3 alone must be cursor, not scroll"
     );
     finish(monitor.on_keyboard_event(KeyboardEvent::key(2, 3, true)));
+    finish(monitor.on_action_event(ActionEvent {
+        action: Action::User(TRIGGER_USER_ID),
+        keyboard_event: KeyboardEvent::key(2, 3, true),
+    }));
     finish(keyboard.process_inner(KeyboardEvent::key(2, 3, true)));
     assert!(reports().0.is_empty(), "trigger V must not type");
     finish(router.on_pointing_event(motion(10, 0)));
@@ -134,6 +139,10 @@ fn real_rmk_route_vial_binding_modifiers_macros_and_release() {
     // router, pubsub channel, Keyboard, keymap lookup and HID report generation.
     finish(monitor.on_keyboard_event(KeyboardEvent::key(2, 3, false)));
     finish(monitor.on_keyboard_event(KeyboardEvent::key(2, 3, true)));
+    finish(monitor.on_action_event(ActionEvent {
+        action: Action::User(TRIGGER_USER_ID),
+        keyboard_event: KeyboardEvent::key(2, 3, true),
+    }));
     for (x, y, k) in [
         (-31, 0, HidKeyCode::A),
         (31, 0, HidKeyCode::B),
@@ -229,6 +238,7 @@ fn concurrent_real_tasks_drain_keyboard_backpressure_and_do_not_leak_motion() {
     reports();
     let mut keys = [[[KeyAction::No; 11]; 5]; 8];
     keys[0][0][0] = KeyAction::Single(Action::LayerOn(3));
+    keys[3][2][3] = KeyAction::Single(Action::User(TRIGGER_USER_ID));
     keys[3][4][1] = key(HidKeyCode::A);
     let mut data = KeymapData::new(keys);
     let mut behavior = BehaviorConfig::default();
@@ -303,4 +313,102 @@ fn concurrent_real_tasks_drain_keyboard_backpressure_and_do_not_leak_motion() {
         tick();
     }
     assert_eq!(reports().1, vec![(5, -6)]);
+}
+
+#[test]
+fn live_trigger_remap_transparency_multiple_holds_and_release_after_edit() {
+    embassy_time::MockDriver::get().reset();
+    rmk::state::set_usb_state(UsbState::Configured);
+    reports();
+    let mut keys = [[[KeyAction::No; 11]; 5]; 8];
+    keys[0][0][0] = KeyAction::Single(Action::LayerOn(2));
+    keys[0][1][1] = KeyAction::Single(Action::User(TRIGGER_USER_ID));
+    keys[2][1][1] = KeyAction::Transparent;
+    keys[2][4][1] = key(HidKeyCode::Z);
+    keys[0][2][3] = key(HidKeyCode::V);
+    let mut data = KeymapData::new(keys);
+    let mut behavior = BehaviorConfig::default();
+    let positional = PositionalConfig::default();
+    let map = finish(KeyMap::new(&mut data, &mut behavior, &positional));
+    let ctx = KeyboardContext::new(&map);
+    let mut keyboard = Keyboard::new(&map);
+    let trigger = Cell::new(Trigger::default());
+    let mut monitor = GestureTriggerMonitor::new(&trigger);
+    let cfg = || PointingProcessorConfig {
+        device_id: 0,
+        ..Default::default()
+    };
+    let mut router =
+        GesturePointingProcessor::new(PointingProcessor::new(&map, cfg()), cfg(), &map, &trigger);
+    let (mut k, mut m, mut r) = (
+        pin!(keyboard.run()),
+        pin!(monitor.run()),
+        pin!(router.run()),
+    );
+    let mut cx = Context::from_waker(Waker::noop());
+    let mut ticks = |n| {
+        for _ in 0..n {
+            assert!(k.as_mut().poll(&mut cx).is_pending());
+            assert!(m.as_mut().poll(&mut cx).is_pending());
+            assert!(r.as_mut().poll(&mut cx).is_pending());
+            embassy_time::MockDriver::get().advance(embassy_time::Duration::from_millis(1));
+        }
+    };
+    ticks(1);
+    finish(publish_event_async(KeyboardEvent::key(0, 0, true)));
+    ticks(20);
+    assert_eq!(map.active_layer(), 2);
+    finish(publish_event_async(KeyboardEvent::key(1, 1, true)));
+    ticks(20);
+    assert!(
+        trigger.get().pressed,
+        "transparent layer must use RMK's resolved action"
+    );
+    finish(publish_event_async(motion(31, 0)));
+    ticks(100);
+    let (keys, mouse) = reports();
+    assert!(mouse.is_empty());
+    assert!(keys.iter().any(|(_, x)| x.contains(&(HidKeyCode::Z as u8))));
+    assert_eq!(keys.last(), Some(&(0, [0; 6])));
+    // Change another physical position through the exact live host keymap API.
+    finish(ctx.set_action(2, 2, 7, KeyAction::Single(Action::User(TRIGGER_USER_ID))));
+    finish(publish_event_async(KeyboardEvent::key(2, 7, true)));
+    ticks(20);
+    finish(publish_event_async(KeyboardEvent::key(1, 1, false)));
+    ticks(20);
+    assert!(
+        trigger.get().pressed,
+        "second trigger must keep capture active"
+    );
+    // Remap a held trigger to KC_NO: raw release still clears its latch.
+    finish(ctx.set_action(2, 2, 7, KeyAction::No));
+    finish(publish_event_async(KeyboardEvent::key(2, 7, false)));
+    ticks(20);
+    assert!(!trigger.get().pressed);
+    finish(publish_event_async(KeyboardEvent::key(2, 7, true)));
+    ticks(20);
+    assert!(!trigger.get().pressed, "live removal must take effect");
+    finish(publish_event_async(KeyboardEvent::key(2, 7, false)));
+    ticks(20);
+    // A completed rapid tap must not be armed by a delayed ActionEvent.
+    finish(publish_event_async(KeyboardEvent::key(1, 1, true)));
+    finish(publish_event_async(KeyboardEvent::key(1, 1, false)));
+    ticks(30);
+    assert!(!trigger.get().pressed);
+    finish(publish_event_async(motion(4, 5)));
+    ticks(20);
+    assert_eq!(reports().1, vec![(4, 5)]);
+    finish(publish_event_async(KeyboardEvent::key(0, 0, false)));
+    ticks(20);
+    assert_eq!(map.active_layer(), 0);
+    finish(publish_event_async(KeyboardEvent::key(2, 3, true)));
+    finish(publish_event_async(KeyboardEvent::key(2, 3, false)));
+    ticks(30);
+    assert!(
+        !trigger.get().pressed,
+        "physical V is no longer a hardcoded trigger"
+    );
+    let (keys, _) = reports();
+    assert!(keys.iter().any(|(_, x)| x.contains(&(HidKeyCode::V as u8))));
+    assert_eq!(keys.last(), Some(&(0, [0; 6])));
 }

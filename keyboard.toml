@@ -519,7 +519,7 @@ name = "Layer 3"
 keys = """
 TD(29)  _  _  TD(30)  _  _  _  _  _  _
 TD(28)  TD(27)  TD(26)  TD(25)  TD(24)  _  _  _  TD(15)  TD(16)  TD(21)  _
-_  _  _  No  _  _  _  _  International1  _  _  _
+_  _  _  User10  _  _  _  _  International1  _  _  _
 _  _  _  _  _  _  _  _  _
 No  No  No  No
 """
@@ -573,3 +573,8 @@ encoders = [["_", "_"]]
 [event.keyboard]
 pubs = 3
 subs = 4
+
+# Resolved live user actions drive the assignable gesture trigger.
+[event.action]
+pubs = 1
+subs = 1
