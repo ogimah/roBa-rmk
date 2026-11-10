@@ -1,3 +1,9 @@
+# Previous fixed-trigger gesture implementation
+
+**For this branch, use [Vial-assignable gesture trigger](gesture-trigger.md).**
+The following describes the earlier hardware-tested fixed layer-3 + V build;
+its `KC_NO` trigger instructions do not apply to this branch.
+
 # Layer 3 + V trackball gestures
 
 For the build with the user's layout already preloaded, see
