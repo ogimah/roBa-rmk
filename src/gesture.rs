@@ -1,7 +1,5 @@
 //! Hardware-independent capture state. Distances are sensor counts, not pixels.
-pub const GESTURE_LAYER: u8 = 3;
-pub const TRIGGER_ROW: u8 = 2;
-pub const TRIGGER_COL: u8 = 3;
+pub const TRIGGER_USER_ID: u8 = 10;
 pub const OUTPUT_ROW: u8 = 4;
 pub const THRESHOLD: i32 = 30;
 pub const COOLDOWN_MS: u64 = 150;
@@ -30,8 +28,8 @@ pub struct Trigger {
     pub epoch: u32,
 }
 impl Trigger {
-    pub fn key(&mut self, row: u8, col: u8, pressed: bool) {
-        if (row, col) == (TRIGGER_ROW, TRIGGER_COL) && self.pressed != pressed {
+    pub fn set_pressed(&mut self, pressed: bool) {
+        if self.pressed != pressed {
             self.pressed = pressed;
             self.epoch = self.epoch.wrapping_add(1);
         }
@@ -56,8 +54,8 @@ pub struct Gesture {
     last_fire: Option<u64>,
 }
 impl Gesture {
-    pub fn motion(&mut self, layer: u8, trigger: Trigger, x: i32, y: i32, now: u64) -> Route {
-        let active = layer == GESTURE_LAYER && trigger.pressed;
+    pub fn motion(&mut self, _layer: u8, trigger: Trigger, x: i32, y: i32, now: u64) -> Route {
+        let active = trigger.pressed;
         if active != self.active || trigger.epoch != self.epoch {
             self.x = 0;
             self.y = 0;
@@ -208,7 +206,9 @@ mod tests {
             ),
             Route::Captured(None)
         );
-        assert_eq!(g.motion(2, held(), 99, 0, 3), Route::Cursor);
+        let mut t = held();
+        t.layer_changed();
+        assert_eq!(g.motion(2, t, 1, 0, 3), Route::Captured(None));
         assert_eq!(g.motion(3, held(), 1, 0, 4), Route::Captured(None));
     }
     #[test]
@@ -216,21 +216,23 @@ mod tests {
         let mut g = Gesture::default();
         let mut t = held();
         g.motion(3, t, 30, 0, 0);
-        t.key(2, 3, false);
-        t.key(2, 3, true);
+        t.set_pressed(false);
+        t.set_pressed(true);
         assert_eq!(g.motion(3, t, 1, 0, 200), Route::Captured(None));
         t.layer_changed();
         assert_eq!(g.motion(3, t, 29, 0, 201), Route::Captured(None));
     }
     #[test]
-    fn normal_motion_passes_in_other_layers_and_without_v() {
+    fn every_layer_can_capture_and_unarmed_motion_passes() {
         for l in 0..8 {
-            if l != 3 {
-                assert_eq!(
-                    Gesture::default().motion(l, held(), 80, -80, 0),
-                    Route::Cursor
-                );
-            }
+            assert_eq!(
+                Gesture::default().motion(l, held(), 31, 0, 0),
+                Route::Captured(Some(Direction::Right))
+            );
+            assert_eq!(
+                Gesture::default().motion(l, Trigger::default(), 80, -80, 0),
+                Route::Cursor
+            );
         }
         assert_eq!(
             Gesture::default().motion(3, Trigger::default(), 80, -80, 0),
@@ -238,14 +240,13 @@ mod tests {
         );
     }
     #[test]
-    fn unrelated_keys_cannot_arm_and_epoch_wraps() {
+    fn trigger_epoch_wraps() {
         let mut t = Trigger {
             pressed: false,
             epoch: u32::MAX,
         };
-        t.key(1, 3, true);
         assert!(!t.pressed);
-        t.key(2, 3, true);
+        t.set_pressed(true);
         assert_eq!(t.epoch, 0);
     }
     #[test]

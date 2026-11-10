@@ -1,3 +1,7 @@
+For the assignable-trigger build, see [trigger configuration](gesture-trigger.md).
+Its compiled layer-3 V binding is now User10 (Gesture Trigger); saved layouts
+still take precedence. The rest of the preloaded defaults below are preserved.
+
 # Preloaded 261109_robaish layout
 
 The user-provided `config/261109_robaish.vil` is the source for this build's

@@ -50,6 +50,16 @@
             "name": "SWITCH",
             "title": "Switch default output mode between USB/BLE",
             "shortName": "Switch\nOutput"
+        },
+        {
+            "name": "CLR_PEER",
+            "title": "Clear split peer pairing (hold 5 seconds)",
+            "shortName": "Clear\nPeer"
+        },
+        {
+            "name": "GESTURE_TRIGGER",
+            "title": "Gesture Trigger (hold and move trackball)",
+            "shortName": "Gesture\nTrigger"
         }
     ],
     "layouts": {

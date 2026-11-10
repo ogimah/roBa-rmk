@@ -92,8 +92,8 @@ def render(source,template):
         vals=[]
         for r,c in mapping:
             # All virtual gesture slots are deliberately unassigned; physical V
-            # on layer 3 remains the non-typing gesture trigger.
-            vals.append('No' if r==4 or (i,r,c)==(3,2,3) else key(layer[r][c]))
+            # on layer 3 defaults to the assignable non-typing trigger.
+            vals.append('No' if r==4 else 'User10' if (i,r,c)==(3,2,3) else key(layer[r][c]))
         # Format in the existing physical layout sequence plus the virtual row.
         widths=[10,12,12,9,4];lines=[];offset=0
         for n in widths:lines.append('  '.join(vals[offset:offset+n]));offset+=n
@@ -101,7 +101,7 @@ def render(source,template):
         enc=source['encoder_layout'][i]
         if len(enc)!=1:raise ValueError('Expected exactly one encoder')
         layers+=['[[layer]]',f'name = {q(config["layer"][i]["name"])}','keys = """',*lines,'"""',f'encoders = [[{q(key(enc[0][0]))}, {q(key(enc[0][1]))}]]','']
-    return prefix+'\n'.join(b)+'\n'+aliases+'\n'.join(layers)+'\n# Physical central, split peripheral, and synthetic gesture events may publish concurrently.\n[event.keyboard]\npubs = 3\nsubs = 4\n'
+    return prefix+'\n'.join(b)+'\n'+aliases+'\n'.join(layers)+'\n# Physical central, split peripheral, and synthetic gesture events may publish concurrently.\n[event.keyboard]\npubs = 3\nsubs = 4\n\n# Resolved live user actions drive the assignable gesture trigger.\n[event.action]\npubs = 1\nsubs = 1\n'
 
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('source',type=Path);p.add_argument('keyboard',type=Path);p.add_argument('--check',action='store_true');a=p.parse_args()

@@ -22,7 +22,7 @@ class ConfigurationTests(unittest.TestCase):
     def test_existing_configuration_preserved(self):
         old = tomllib.loads(original("keyboard.toml").decode())
         new = tomllib.loads((ROOT / "keyboard.toml").read_text())
-        for section in old.keys() - {"layout", "layer", "behavior"}:
+        for section in old.keys() - {"layout", "layer", "behavior", "event"}:
             self.assertEqual(new[section], old[section], section)
         self.assertEqual(new["layout"]["rows"], 5)
         for name in old["layout"].keys() - {"rows", "matrix_map"}:
@@ -44,8 +44,9 @@ class ConfigurationTests(unittest.TestCase):
     def test_vial_coordinates_and_custom_codes_preserved(self):
         old = json.loads(original("vial.json"))
         new = json.loads((ROOT / "vial.json").read_text())
+        self.assertEqual([x["name"] for x in new["customKeycodes"][9:]], ["CLR_PEER", "GESTURE_TRIGGER"])
         self.assertEqual(new["matrix"], {"rows": 5, "cols": 11})
-        self.assertEqual(new["customKeycodes"], old["customKeycodes"])
+        self.assertEqual(new["customKeycodes"][:9], old["customKeycodes"])
         self.assertEqual(new["layouts"]["keymap"][:-3], old["layouts"]["keymap"])
         added = [item for row in new["layouts"]["keymap"][-3:] for item in row if isinstance(item, str)]
         self.assertCountEqual(added, ["4,0", "4,1", "4,2", "4,3"])
