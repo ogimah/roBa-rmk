@@ -1,3 +1,6 @@
+**This branch adds three independent triggers. See [three-trigger setup](gesture-three.md).**
+The single-trigger documentation below describes the preceding working build.
+
 # Vial-assignable gesture trigger
 
 Based on the hardware-tested `feat/gesture-user-defaults` commit e323304.

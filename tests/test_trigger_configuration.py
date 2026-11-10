@@ -4,14 +4,17 @@ import tomllib
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
-BASE = 'e323304c8f7c208f38c685d1348d07d53f3a9a0e'
+BASE = '8e52c683761bebcc174ceec97fd00c6944efa14f'
 
 class TriggerConfigurationTests(unittest.TestCase):
     def test_working_layout_and_hardware_are_preserved_except_trigger(self):
         old = tomllib.loads(subprocess.check_output(['git', 'show', f'{BASE}:keyboard.toml'], cwd=ROOT).decode())
         new = tomllib.loads((ROOT / 'keyboard.toml').read_text())
-        old['layer'][3]['keys'] = old['layer'][3]['keys'].replace('_  _  _  No  _', '_  _  _  User10  _')
-        old['event']['action'] = {'pubs': 1, 'subs': 1}
+        old['layout']['matrix_map'] += '(4,4) (4,5) (4,6) (4,7)\n(4,8) (4,9) (4,10) (0,5)\n'
+        for layer in old['layer']:
+            layer['keys'] = layer['keys'].split() + ['No'] * 8
+        for layer in new['layer']:
+            layer['keys'] = layer['keys'].split()
         self.assertEqual(new, old)
         for name in ['Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml', 'memory.x', 'src/central.rs', 'src/peripheral.rs', 'config/261109_robaish.vil']:
             self.assertEqual((ROOT / name).read_bytes(), subprocess.check_output(['git', 'show', f'{BASE}:{name}'], cwd=ROOT), name)

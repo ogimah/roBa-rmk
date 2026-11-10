@@ -93,9 +93,9 @@ def render(source,template):
         for r,c in mapping:
             # All virtual gesture slots are deliberately unassigned; physical V
             # on layer 3 defaults to the assignable non-typing trigger.
-            vals.append('No' if r==4 else 'User10' if (i,r,c)==(3,2,3) else key(layer[r][c]))
+            vals.append('No' if (r==4 or (r,c)==(0,5)) else 'User10' if (i,r,c)==(3,2,3) else key(layer[r][c]))
         # Format in the existing physical layout sequence plus the virtual row.
-        widths=[10,12,12,9,4];lines=[];offset=0
+        widths=[10,12,12,9,4,4,4];lines=[];offset=0
         for n in widths:lines.append('  '.join(vals[offset:offset+n]));offset+=n
         if offset!=len(mapping):raise ValueError('Unexpected physical mapping')
         enc=source['encoder_layout'][i]
