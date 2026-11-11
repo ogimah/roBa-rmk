@@ -494,7 +494,7 @@ No  No  No  No
 No  No  No  No
 No  No  No  No
 """
-encoders = [["MouseWheelDown", "MouseWheelUp"]]
+encoders = [["MouseWheelUp", "MouseWheelDown"]]
 
 [[layer]]
 name = "Layer 1"

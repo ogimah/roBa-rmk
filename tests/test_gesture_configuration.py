@@ -44,7 +44,7 @@ class ConfigurationTests(unittest.TestCase):
     def test_vial_coordinates_and_custom_codes_preserved(self):
         old = json.loads(original("vial.json"))
         new = json.loads((ROOT / "vial.json").read_text())
-        self.assertEqual([x["name"] for x in new["customKeycodes"][9:]], ["CLR_PEER", "GESTURE_TRIGGER", "GESTURE_TRIGGER_2", "GESTURE_TRIGGER_3"])
+        self.assertEqual([x["name"] for x in new["customKeycodes"][9:]], ["CLR_PEER", "Gesture1", "Gesture2", "Gesture3"])
         self.assertEqual(new["matrix"], {"rows": 5, "cols": 11})
         self.assertEqual(new["customKeycodes"][:9], old["customKeycodes"])
         self.assertEqual(new["layouts"]["keymap"][:-3], old["layouts"]["keymap"])
