@@ -4,7 +4,7 @@ import tomllib
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
-BASE = '8e52c683761bebcc174ceec97fd00c6944efa14f'
+BASE = '84f2c35bf3ace1009b5c97cabdd25cbc4e7f0d76'
 
 class TriggerConfigurationTests(unittest.TestCase):
     def test_working_layout_and_hardware_are_preserved_except_trigger(self):
