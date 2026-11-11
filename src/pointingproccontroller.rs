@@ -1,5 +1,6 @@
 use crate::gesture::{
-    BANK_COUNT, Gesture, Route, TRIGGER_USER_ID, Trigger, logical_motion, output_position,
+    BANK_COUNT, Gesture, Route, SCROLL_USER_ID, TRIGGER_USER_ID, Trigger, logical_motion,
+    output_position,
 };
 use core::cell::Cell;
 use rmk::{
@@ -9,7 +10,8 @@ use rmk::{
         PointingEvent, PointingProcessorEvent, SubscribableEvent, publish_event_async,
     },
     input_device::pointing::{
-        PointingProcessor, PointingProcessorConfig, PointingProcessorProcessorEventEnum,
+        PointingMode, PointingProcessor, PointingProcessorConfig,
+        PointingProcessorProcessorEventEnum, ScrollConfig,
     },
     keymap::KeyMap,
     macros::processor,
@@ -46,9 +48,10 @@ impl<'a> GestureTriggerMonitor<'a> {
         let mask = self
             .armed
             .iter()
-            .filter(|&&bank| bank != 0)
+            .filter(|&&bank| (1..=BANK_COUNT).contains(&bank))
             .fold(0, |mask, &bank| mask | (1 << (bank - 1)));
         t.set_mask(mask);
+        t.set_scroll(self.armed.contains(&(BANK_COUNT + 1)));
         self.trigger.set(t);
     }
     async fn on_keyboard_event(&mut self, event: KeyboardEvent) {
@@ -67,6 +70,8 @@ impl<'a> GestureTriggerMonitor<'a> {
             } else if let Action::User(id) = event.action {
                 if (TRIGGER_USER_ID..TRIGGER_USER_ID + BANK_COUNT).contains(&id) && self.down[i] {
                     self.armed[i] = id - TRIGGER_USER_ID + 1;
+                } else if id == SCROLL_USER_ID && self.down[i] {
+                    self.armed[i] = BANK_COUNT + 1;
                 }
             }
             self.update();
@@ -113,6 +118,8 @@ pub struct GesturePointingProcessor<'a> {
     keymap: &'a KeyMap<'a>,
     trigger: &'a Cell<Trigger>,
     gesture: Gesture,
+    scroll: PointingProcessor<'a>,
+    scroll_epoch: (u32, u32),
 }
 impl<'a> GesturePointingProcessor<'a> {
     pub fn new(
@@ -121,17 +128,48 @@ impl<'a> GesturePointingProcessor<'a> {
         keymap: &'a KeyMap<'a>,
         trigger: &'a Cell<Trigger>,
     ) -> Self {
+        let scroll = Self::new_scroll(keymap, &config);
         Self {
             inner,
             config,
             keymap,
             trigger,
             gesture: Gesture::default(),
+            scroll,
+            scroll_epoch: (0, 0),
         }
+    }
+    fn new_scroll(
+        keymap: &'a KeyMap<'a>,
+        config: &PointingProcessorConfig,
+    ) -> PointingProcessor<'a> {
+        let mut processor = PointingProcessor::new(keymap, config.clone());
+        processor.set_pointing_mode(PointingMode::Scroll(ScrollConfig {
+            multiplier_x: 0,
+            divisor_x: 0,
+            ..Default::default()
+        }));
+        processor
     }
     async fn on_pointing_event(&mut self, event: PointingEvent) {
         if event.device_id != self.config.device_id {
             self.inner
+                .process(PointingProcessorProcessorEventEnum::Pointing(event))
+                .await;
+            return;
+        }
+        let trigger = self.trigger.get();
+        let epoch = (trigger.scroll_epoch, trigger.epoch);
+        if epoch != self.scroll_epoch {
+            // RMK's mode setter does NOT reset its private accumulator. Recreate
+            // only this dedicated scroll processor, using its public constructor.
+            // Epochs also catch release/repress or gesture preemption with no
+            // intermediate pointing event, preventing stale fractional motion.
+            self.scroll = Self::new_scroll(self.keymap, &self.config);
+            self.scroll_epoch = epoch;
+        }
+        if trigger.scroll_pressed && !trigger.pressed {
+            self.scroll
                 .process(PointingProcessorProcessorEventEnum::Pointing(event))
                 .await;
             return;
@@ -151,7 +189,6 @@ impl<'a> GesturePointingProcessor<'a> {
             self.config.invert_y,
             self.config.swap_xy,
         );
-        let trigger = self.trigger.get();
         match self.gesture.motion(
             self.keymap.active_layer(),
             trigger,
