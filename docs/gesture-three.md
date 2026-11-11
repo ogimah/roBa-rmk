@@ -8,9 +8,9 @@ Vial custom keycodes:
 
 | Trigger | User ID / VIA code | Output cross |
 | --- | --- | --- |
-| Gesture Trigger | 10 / 0x7E0A (unchanged) | Left |
-| Gesture Trigger 2 | 11 / 0x7E0B | Middle |
-| Gesture Trigger 3 | 12 / 0x7E0C | Right |
+| Gesture1 | 10 / 0x7E0A (unchanged) | Left |
+| Gesture2 | 11 / 0x7E0B | Middle |
+| Gesture3 | 12 / 0x7E0C | Right |
 
 Reconnect Vial after flashing to reload its definition. Place each trigger on
 any physical key and layer, then assign that layer's corresponding cross.
@@ -55,3 +55,12 @@ outputs, release, both new banks' live output edits, conflict capture, reset on
 bank changes, normal cursor recovery and rejection of synthetic trigger actions.
 Existing threshold, timing, backpressure, remapping, macro and modifier tests
 remain in place. Hardware verification is reported separately from builds.
+
+## Short labels and encoder defaults
+
+The Vial custom name, title and shortName are Gesture1, Gesture2, Gesture3.
+IDs 10..12 and output behavior stay unchanged. Initial encoder bindings are
+now MouseWheelUp, MouseWheelDown (reversed from the supplied saved .vil).
+Other layers remain transparent. The source .vil is retained unchanged.
+Existing on-device bindings or loading an older .vil can override these defaults;
+reverse the encoder bindings in Vial if the older saved values are still active.

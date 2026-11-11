@@ -57,19 +57,19 @@
             "shortName": "Clear\nPeer"
         },
         {
-            "name": "GESTURE_TRIGGER",
-            "title": "Gesture Trigger (hold and move trackball)",
-            "shortName": "Gesture\nTrigger"
+            "name": "Gesture1",
+            "title": "Gesture1",
+            "shortName": "Gesture1"
         },
         {
-            "name": "GESTURE_TRIGGER_2",
-            "title": "Gesture Trigger 2 (middle cross)",
-            "shortName": "Gesture\nTrigger 2"
+            "name": "Gesture2",
+            "title": "Gesture2",
+            "shortName": "Gesture2"
         },
         {
-            "name": "GESTURE_TRIGGER_3",
-            "title": "Gesture Trigger 3 (right cross)",
-            "shortName": "Gesture\nTrigger 3"
+            "name": "Gesture3",
+            "title": "Gesture3",
+            "shortName": "Gesture3"
         }
     ],
     "layouts": {

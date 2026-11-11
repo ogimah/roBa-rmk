@@ -27,7 +27,7 @@ class UserDefaultsTests(unittest.TestCase):
                 expected = "No" if (r == 4 or (r,c) == (0,5)) else "User10" if (layer, r, c) == (3, 2, 3) else imp.key(self.source["layout"][layer][r][c])
                 self.assertEqual(code, expected, (layer, r, c))
                 count += r < 4 and (r,c) != (0,5)
-            self.assertEqual(config["encoders"], [[imp.key(x) for x in self.source["encoder_layout"][layer][0]]])
+            self.assertEqual(config["encoders"], [[imp.key(x) for x in reversed(self.source["encoder_layout"][layer][0])]])
         self.assertEqual(count, 344)
 
     def test_tap_dance_actions_and_timeout_indices_are_preserved(self):

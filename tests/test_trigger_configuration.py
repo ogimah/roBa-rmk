@@ -13,6 +13,7 @@ class TriggerConfigurationTests(unittest.TestCase):
         old['layout']['matrix_map'] += '(4,4) (4,5) (4,6) (4,7)\n(4,8) (4,9) (4,10) (0,5)\n'
         for layer in old['layer']:
             layer['keys'] = layer['keys'].split() + ['No'] * 8
+            layer['encoders'] = [list(reversed(pair)) for pair in layer['encoders']]
         for layer in new['layer']:
             layer['keys'] = layer['keys'].split()
         self.assertEqual(new, old)

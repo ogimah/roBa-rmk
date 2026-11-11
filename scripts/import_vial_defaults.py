@@ -100,7 +100,7 @@ def render(source,template):
         if offset!=len(mapping):raise ValueError('Unexpected physical mapping')
         enc=source['encoder_layout'][i]
         if len(enc)!=1:raise ValueError('Expected exactly one encoder')
-        layers+=['[[layer]]',f'name = {q(config["layer"][i]["name"])}','keys = """',*lines,'"""',f'encoders = [[{q(key(enc[0][0]))}, {q(key(enc[0][1]))}]]','']
+        layers+=['[[layer]]',f'name = {q(config["layer"][i]["name"])}','keys = """',*lines,'"""',f'encoders = [[{q(key(enc[0][1]))}, {q(key(enc[0][0]))}]]','']
     return prefix+'\n'.join(b)+'\n'+aliases+'\n'.join(layers)+'\n# Physical central, split peripheral, and synthetic gesture events may publish concurrently.\n[event.keyboard]\npubs = 3\nsubs = 4\n\n# Resolved live user actions drive the assignable gesture trigger.\n[event.action]\npubs = 1\nsubs = 1\n'
 
 if __name__=='__main__':
