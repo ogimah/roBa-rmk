@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   pull_request:
   push:
-    branches: [feat/gesture-vial-live, feat/gesture-user-defaults, feat/gesture-trigger-vial, feat/gesture-trigger-coropit, feat/gesture-three-vial, feat/gesture-three-coropit, feat/gesture-labels-vial, feat/gesture-labels-coropit]
+    branches: [feat/gesture-vial-live, feat/gesture-user-defaults, feat/gesture-trigger-vial, feat/gesture-trigger-coropit, feat/gesture-three-vial, feat/gesture-three-coropit, feat/gesture-labels-vial, feat/gesture-labels-coropit, feat/scroll-trigger-vial, feat/scroll-trigger-coropit]
 
 jobs:
   # build:

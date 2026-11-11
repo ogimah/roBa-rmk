@@ -1,5 +1,6 @@
 //! Hardware-independent capture state. Distances are sensor counts, not pixels.
 pub const TRIGGER_USER_ID: u8 = 10;
+pub const SCROLL_USER_ID: u8 = 13;
 #[cfg(test)]
 pub const OUTPUT_ROW: u8 = 4;
 pub const BANK_COUNT: u8 = 3;
@@ -41,6 +42,8 @@ pub struct Trigger {
     pub pressed: bool,
     pub bank: u8,
     pub epoch: u32,
+    pub scroll_pressed: bool,
+    pub scroll_epoch: u32,
 }
 impl Trigger {
     #[cfg(test)]
@@ -58,6 +61,12 @@ impl Trigger {
             self.pressed = pressed;
             self.bank = bank;
             self.epoch = self.epoch.wrapping_add(1);
+        }
+    }
+    pub fn set_scroll(&mut self, pressed: bool) {
+        if self.scroll_pressed != pressed {
+            self.scroll_pressed = pressed;
+            self.scroll_epoch = self.scroll_epoch.wrapping_add(1);
         }
     }
     pub fn layer_changed(&mut self) {
@@ -151,6 +160,8 @@ mod tests {
         Trigger {
             pressed: true,
             bank: 0,
+            scroll_pressed: false,
+            scroll_epoch: 0,
             epoch: 1,
         }
     }
@@ -216,6 +227,8 @@ mod tests {
                 Trigger {
                     pressed: false,
                     bank: 0,
+                    scroll_pressed: false,
+                    scroll_epoch: 0,
                     epoch: 2
                 },
                 0,
@@ -230,6 +243,8 @@ mod tests {
                 Trigger {
                     pressed: true,
                     bank: 0,
+                    scroll_pressed: false,
+                    scroll_epoch: 0,
                     epoch: 3
                 },
                 1,
@@ -276,6 +291,8 @@ mod tests {
         let mut t = Trigger {
             pressed: false,
             bank: 0,
+            scroll_pressed: false,
+            scroll_epoch: 0,
             epoch: u32::MAX,
         };
         assert!(!t.pressed);
