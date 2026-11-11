@@ -57,19 +57,19 @@
             "shortName": "Clear\nPeer"
         },
         {
-            "name": "Gesture1",
-            "title": "Gesture1",
-            "shortName": "Gesture1"
+            "name": "GT1",
+            "title": "GT1",
+            "shortName": "GT1"
         },
         {
-            "name": "Gesture2",
-            "title": "Gesture2",
-            "shortName": "Gesture2"
+            "name": "GT2",
+            "title": "GT2",
+            "shortName": "GT2"
         },
         {
-            "name": "Gesture3",
-            "title": "Gesture3",
-            "shortName": "Gesture3"
+            "name": "GT3",
+            "title": "GT3",
+            "shortName": "GT3"
         }
     ],
     "layouts": {
