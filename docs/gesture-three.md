@@ -1,3 +1,6 @@
+This branch also provides [ST vertical scroll trigger](scroll-trigger.md).
+GT1..GT3 behavior and the reversed encoder defaults below are retained.
+
 # Three Vial gesture triggers and output crosses
 
 Based on the hardware-tested assignable-trigger build 8e52c68. The COROPIT

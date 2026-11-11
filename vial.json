@@ -70,6 +70,11 @@
             "name": "GT3",
             "title": "GT3",
             "shortName": "GT3"
+        },
+        {
+            "name": "ST",
+            "title": "ST",
+            "shortName": "ST"
         }
     ],
     "layouts": {
