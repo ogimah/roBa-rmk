@@ -54,16 +54,11 @@ jobs:
         run: |
           sha256sum *.uf2
 
-      - name: Upload artifact (central)
+      - name: Assemble and verify distribution bundle
+        run: python3 scripts/package_distribution.py
+
+      - name: Upload complete distribution bundle
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           archive: false
-          path: moNa2-central.uf2
-
-      - name: Upload artifact (peripheral)
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          archive: false
-          path: moNa2-peripheral.uf2
-
-
+          path: dist/moNa2-*-bundle.zip
