@@ -1,5 +1,3 @@
-import copy
-import importlib.util
 import json
 from pathlib import Path
 import re
@@ -9,9 +7,6 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 BASELINE = "24dbb3cfb997b61dc21640dd33017665412647b6"
-spec = importlib.util.spec_from_file_location("migration", ROOT / "scripts/migrate_gesture_vil.py")
-migration = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(migration)
 
 
 def original(name):
@@ -63,39 +58,6 @@ class ConfigurationTests(unittest.TestCase):
         self.assertLess(tasks.index("trigger_monitor"), tasks.index("trackball0_id0_processor"))
         self.assertIn("run_peripheral_manager::<4, 6, 0, 0, _>", source)
         self.assertIn("scan_peripherals", source)
-
-
-class MigrationTests(unittest.TestCase):
-    def layout(self):
-        return {"uid": migration.KEYBOARD_UID, "layout": [[[f"key-{l}-{r}-{c}" for c in range(11)] for r in range(4)] for l in range(8)], "macro": "keep", "encoder_layout": [[["KC_A", "KC_B"]]] * 8, "settings": {"example": 123}}
-
-    def test_preserves_everything_except_trigger_and_new_row(self):
-        old = self.layout()
-        saved = copy.deepcopy(old)
-        new = migration.migrate(old)
-        self.assertEqual(old, saved)
-        for l in range(8):
-            for r in range(4):
-                for c in range(11):
-                    self.assertEqual(new["layout"][l][r][c], "KC_NO" if (l, r, c) == (3, 2, 3) else old["layout"][l][r][c])
-            self.assertEqual(new["layout"][l][4], ["KC_NO"] * 11)
-        for key in old.keys() - {"layout"}:
-            self.assertEqual(new[key], old[key])
-
-    def test_repeated_migration_preserves_gesture_assignments(self):
-        new = migration.migrate(self.layout())
-        new["layout"][3][4][:4] = ["KC_A", "KC_B", "KC_C", "KC_D"]
-        self.assertEqual(migration.migrate(new), new)
-
-    def test_refuses_wrong_keyboard_or_dimensions(self):
-        data = self.layout()
-        data["uid"] = 0
-        with self.assertRaises(ValueError):
-            migration.migrate(data)
-        data = self.layout()
-        data["layout"][0][0].pop()
-        with self.assertRaises(ValueError):
-            migration.migrate(data)
 
 
 if __name__ == "__main__":

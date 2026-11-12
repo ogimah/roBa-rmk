@@ -1,118 +1,65 @@
-# roBa-rmk
+# moNa2 — GT1 / GT2 / GT3 / ST 配布版
 
-[roBa](https://github.com/kumamuk-git/roBa)キーボードの[RMK](https://rmk.rs)ファームウェアです。
+roBaish / moNa2向けの非公式RMKファームウェアです。
+[kot149/roBa-rmk](https://github.com/kot149/roBa-rmk)を基に、
+Vial / Pipetteから割り当てられる4方向ジェスチャ3組と、縦スクロールトリガーを追加しています。
 
-> [!WARNING]
-> - この実装は非公式です。自己責任で使用してください。このファームウェアを使用することによるハードウェアの損傷等について、作者は責任を負いません。
+## 初期状態
 
-## 対応状況
+- 個人用配列を取り込む前の標準配列（`fc15503`）へ復元。
+- TD・マクロ・コンボの設定は空。TD32枠など、Vialで編集するための容量は保持。
+- GT1 / GT2 / GT3 / STはすべて未割り当て。仮想十字の12方向も未割り当て。
+- エンコーダーは元のPageDown / PageUp。その他レイヤーでは透過。
+- 個人用の `.vil`、マクロ内容、旧UF2はこのブランチの配布ファイルに含めません。
 
-- [x] 基本的なキー入力
-- [x] BLE対応
-- [x] Vial対応
-- [x] ロータリーエンコーダー対応
-- [x] トラックボール対応
-  - [x] スクロールレイヤー
-  - [ ] オートマウスレイヤー
-- [x] バッテリー
-  - [x] バッテリー稼働
-  - [x] バッテリー充電
-  - [x] バッテリー残量の取得
-    - [x] Central
-    - [ ] Peripheral
-- [ ] LED
-  - [ ] 接続インジケーター
-  - [ ] バッテリー残量インジケーター
-  - [ ] 充電状態インジケーター
+既存機器に保存されているVial設定は、これらの初期値より優先されます。
+書き込み時に設定やBluetoothペアリングを自動消去する機能は追加していません。
+既存機で初期状態を検証する場合は、まず現在の `.vil` を保存してください。
 
-## ビルド済みファイルのダウンロード
+## UF2
 
-[Releases](https://github.com/kot149/roBa-rmk/releases) からダウンロードできます。
+成功したGitHub Actionsのページで **Artifacts** を開いてください。
 
-## キーマップ変更手順
+| トラボ | 右 / Central | 左 / Peripheral |
+| --- | --- | --- |
+| 純正 | moNa2-central.uf2 | moNa2-peripheral.uf2 |
+| コロピ換装 | moNa2-coropit-central.uf2 | moNa2-coropit-peripheral.uf2 |
 
-[VIal](https://get.vial.today) に対応しています。以下のいずれかを使用してキーマップを変更してください。
-- [Vial(Web版)](https://vial.rocks)
-- [Vial(デスクトップ版)](https://get.vial.today/download/)
-- [Pipette](https://github.com/darakuneko/pipette-desktop/)
-- [VIA custom UI for Vial](https://sekigon-gonnoc.github.io/via-custom-ui-for-vial/)
+対応する左右をブートローダーモードで書き込み、右をUSB接続してVialを再接続します。
+純正版のブランチは `release/mona2-stock`、コロピ版は `release/mona2-coropit` です。
 
-## トラックボール設定
+## Vial / Pipetteでの設定
 
-[`src\pointingproccontroller.rs`](src\pointingproccontroller.rs) で設定可能です。
+任意のレイヤー・物理キーに、カスタムキーコードを割り当てます。
 
-デフォルトでは以下のように設定されています。
+| 表記 | 動作 |
+| --- | --- |
+| GT1 | 左の仮想十字へ出力 |
+| GT2 | 中央の仮想十字へ出力 |
+| GT3 | 右の仮想十字へ出力 |
+| ST | 押している間だけトラボを縦スクロールに変換 |
 
-- レイヤー0: カーソル移動
-- レイヤー1: 上下左右矢印キー
-- レイヤー2: 低速モード
-- レイヤー6: スクロールモード
+GTを配置したレイヤーで、対応する仮想十字の上下左右にキーやマクロを設定してください。
+レイヤー固定はありません。出力は現在の有効レイヤーと透過設定に従います。
 
-## ビルド手順
+- GT：移動量 `abs(X)+abs(Y)>30` で即発火。大きい軸を採用し、同値なら横方向。
+  押したまま150ms以上の間隔で再発火できます。解放時に出力しません。
+- ST：縦8カウントでホイール1単位。横移動は無視。解放すると通常カーソルへ復帰。
+  方向はRMK既定（`invert_y=false`）。画面上の方向や移動量はOS設定にも依存します。
+- 同時押しはGT優先。異なる番号のGTを複数押した場合は、1種類になるまで出力を止めます。
+- GT/ST中の移動は通常カーソルへ漏れません。STの端数は解放・モード切り替え時に破棄。
+- Vialのアンロックは右側最上段の両端（初期配列のY/P位置）を押します。
+- 新しい設定は自分の `.vil` として保存してください。
 
-### GitHub Actionsによるビルド
+## 検証とビルド
 
-GitHub Actionsでビルドできます。ワークフローファイルは[こちら](.github/workflows/build.yml)
+GT/ST処理は実機確認済みの版から変更していません。
+この配布版では初期設定の復元・空設定・既存機能の保持を自動テストし、左右UF2をビルドします。
+配布用初期設定そのものの実機確認は別途必要です。
 
-### ローカルビルド手順
+Rust 1.96.0、固定RMKリビジョンで `cargo make uf2`。
+依存バージョン・配線・USB/BLE設定・センサーCPI800は保持しています。
+コロピ版は純正に対しセンサーのX/Y極性だけを反転します。
 
-1. リポジトリをクローンする
-   ```shell
-   git clone https://github.com/kot149/roBa-rmk.git
-   cd roBa-rmk
-   ```
-2. [Rustup](https://www.rust-lang.org/ja/tools/install)をインストールする
-3. Windowsの場合、[LLVMをインストール](https://rust-lang.github.io/rust-bindgen/requirements.html#windows)し、環境変数`LIBCLANG_PATH`を`(LLVMのインストール先)\bin`に設定する
-4. nrf52840用のビルドターゲットを追加する
-   ```shell
-   rustup target add thumbv7em-none-eabihf
-   ```
-5. rmkit, flip-link, cargo-makeをインストールする
-   ```shell
-   cargo install rmkit flip-link cargo-make
-   ```
-6. uf2ファイルをコンパイルする
-   ```shell
-   cargo make uf2
-   ```
-7. uf2ファイルをフラッシュする
-   ※Windows・macOSでのみ動作します。
-
-   central(右手側)
-   ```shell
-   cargo make flash-central
-   ```
-   peripheral(左手側)
-   ```shell
-   cargo make flash-peripheral
-   ```
-
-#### トラブルシューティング
-
-##### WindowsでClangライブラリが見つからないエラー
-
-エラー内容:
-```
-Unable to find libclang: "couldn't find any valid shared libraries matching: ['clang.dll', 'libclang.dll'], set the `LIBCLANG_PATH` environment variable to a path where one of these files can be found (invalid: [])"
-```
-
-解決方法:
-[LLVMをインストール](https://rust-lang.github.io/rust-bindgen/requirements.html#windows)し、環境変数`LIBCLANG_PATH`を`(LLVMのインストール先)\bin`に設定してください。
-
-##### Rustcのスタックオーバーフロー
-
-エラー内容:
-```
-thread 'rustc' (xxxxx) has overflowed its stack
-```
-
-解決方法:
-環境変数`RUST_MIN_STACK`を18388608に設定してください。
-
-```powershell
-$env:RUST_MIN_STACK = "18388608"
-```
-または
-```bash
-export RUST_MIN_STACK=18388608
-```
+ソース履歴の削除や既存ブランチの書き換えは行っていません。
+上流のライセンスは LICENSE-MIT.txt / LICENSE-APACHE.txt を参照してください。

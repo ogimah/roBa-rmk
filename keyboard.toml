@@ -120,348 +120,19 @@ matrix_map = """
 """
 layers = 8
 
-# Startup defaults imported from config/261109_robaish.vil.
-[behavior.one_shot]
-timeout = "1000ms"
+# Public defaults: no configured tap dances, macros, or combos.
+# Keep the existing capacities available for Vial editing.
+[behavior.morse]
+hold_timeout = "200ms"
+permissive_hold = true
+morses = []
+
+[behavior.macros]
+macros = []
 
 [behavior.combo]
 timeout = "50ms"
 combos = []
-
-[behavior.morse]
-hold_timeout = "200ms"
-prior_idle_time = "0ms"
-permissive_hold = false
-hold_on_other_press = true
-unilateral_tap = false
-
-[behavior.morse.profiles.vil_180]
-hold_timeout = "180ms"
-gap_timeout = "180ms"
-
-[behavior.morse.profiles.vil_250]
-hold_timeout = "250ms"
-gap_timeout = "250ms"
-
-[[behavior.morse.morses]]
-tap = "No"
-hold = "LShift"
-double_tap = "WM(Z,LCtrl)"
-hold_after_tap = "No"
-profile = "vil_180"
-
-[[behavior.morse.morses]]
-tap = "WM(Y,LCtrl)"
-hold = "LCtrl"
-double_tap = "No"
-hold_after_tap = "No"
-profile = "vil_180"
-
-[[behavior.morse.morses]]
-tap = "WM(CapsLock,LShift)"
-hold = "LGui"
-double_tap = "NumLock"
-hold_after_tap = "No"
-profile = "vil_180"
-
-[[behavior.morse.morses]]
-tap = "WM(Slash,LShift)"
-hold = "No"
-double_tap = "WM(Kc1,LShift)"
-hold_after_tap = "No"
-profile = "vil_180"
-
-[[behavior.morse.morses]]
-tap = "Minus"
-hold = "WM(Equal,LShift)"
-double_tap = "WM(International1,LShift)"
-hold_after_tap = "No"
-profile = "vil_180"
-
-[[behavior.morse.morses]]
-tap = "WM(F,LCtrl)"
-hold = "No"
-double_tap = "WM(H,LCtrl)"
-hold_after_tap = "No"
-profile = "vil_180"
-
-[[behavior.morse.morses]]
-tap = "WM(P,LCtrl)"
-hold = "No"
-double_tap = "WM(Semicolon,LCtrl)"
-hold_after_tap = "No"
-profile = "vil_180"
-
-[[behavior.morse.morses]]
-tap = "WM(V,LCtrl)"
-hold = "Macro0"
-double_tap = "WM(V,LCtrl|LShift)"
-hold_after_tap = "No"
-profile = "vil_180"
-
-[[behavior.morse.morses]]
-tap = "WM(N,LCtrl|LShift)"
-hold = "No"
-double_tap = "WM(KpPlus,LCtrl|LShift)"
-hold_after_tap = "No"
-profile = "vil_180"
-
-[[behavior.morse.morses]]
-tap = "WM(Down,LGui)"
-hold = "No"
-double_tap = "WM(Home,LGui)"
-hold_after_tap = "No"
-profile = "vil_180"
-
-[[behavior.morse.morses]]
-tap = "Home"
-hold = "WM(Home,LCtrl)"
-double_tap = "End"
-hold_after_tap = "No"
-profile = "vil_180"
-
-[[behavior.morse.morses]]
-tap = "Comma"
-hold = "No"
-double_tap = "Semicolon"
-hold_after_tap = "No"
-profile = "vil_180"
-
-[[behavior.morse.morses]]
-tap = "Dot"
-hold = "No"
-double_tap = "Quote"
-hold_after_tap = "No"
-profile = "vil_180"
-
-[[behavior.morse.morses]]
-tap = "WM(Kc6,LCtrl|LShift)"
-hold = "Macro3"
-double_tap = "WM(International1,LCtrl|LShift)"
-hold_after_tap = "No"
-profile = "vil_180"
-
-[[behavior.morse.morses]]
-tap = "WM(Kc8,LShift)"
-hold = "WM(Kc9,LShift)"
-double_tap = "Macro2"
-hold_after_tap = "No"
-profile = "vil_180"
-
-[[behavior.morse.morses]]
-tap = "RightBracket"
-hold = "NonusHash"
-double_tap = "Macro4"
-hold_after_tap = "No"
-profile = "vil_180"
-
-[[behavior.morse.morses]]
-tap = "WM(RightBracket,LShift)"
-hold = "WM(NonusHash,LShift)"
-double_tap = "Macro5"
-hold_after_tap = "No"
-profile = "vil_180"
-
-[[behavior.morse.morses]]
-tap = "WM(Comma,LShift)"
-hold = "WM(Dot,LShift)"
-double_tap = "Macro6"
-hold_after_tap = "No"
-profile = "vil_180"
-
-[[behavior.morse.morses]]
-tap = "International3"
-hold = "LeftBracket"
-double_tap = "WM(Kc4,LShift)"
-hold_after_tap = "No"
-profile = "vil_180"
-
-[[behavior.morse.morses]]
-tap = "WM(Kc7,LShift)"
-hold = "WM(LeftBracket,LShift)"
-double_tap = "WM(Kc2,LShift)"
-hold_after_tap = "No"
-profile = "vil_180"
-
-[[behavior.morse.morses]]
-tap = "WM(Kc5,LShift)"
-hold = "WM(Kc3,LShift)"
-double_tap = "WM(Kc6,LShift)"
-hold_after_tap = "No"
-profile = "vil_180"
-
-[[behavior.morse.morses]]
-tap = "WM(International3,LShift)"
-hold = "No"
-double_tap = "Equal"
-hold_after_tap = "No"
-profile = "vil_180"
-
-[[behavior.morse.morses]]
-tap = "No"
-hold = "No"
-double_tap = "No"
-hold_after_tap = "No"
-profile = "vil_250"
-
-[[behavior.morse.morses]]
-tap = "No"
-hold = "No"
-double_tap = "No"
-hold_after_tap = "No"
-profile = "vil_250"
-
-[[behavior.morse.morses]]
-tap = "WM(A,LCtrl|LAlt)"
-hold = "WM(C,LCtrl|LAlt)"
-double_tap = "WM(B,LCtrl|LAlt)"
-hold_after_tap = "No"
-profile = "vil_250"
-
-[[behavior.morse.morses]]
-tap = "WM(D,LCtrl|LAlt)"
-hold = "WM(E,LCtrl|LAlt)"
-double_tap = "WM(F,LCtrl|LAlt)"
-hold_after_tap = "No"
-profile = "vil_250"
-
-[[behavior.morse.morses]]
-tap = "WM(G,LCtrl|LAlt)"
-hold = "WM(D,LCtrl)"
-double_tap = "WM(H,LCtrl|LAlt)"
-hold_after_tap = "No"
-profile = "vil_250"
-
-[[behavior.morse.morses]]
-tap = "WM(I,LCtrl|LAlt)"
-hold = "WM(K,LCtrl|LAlt)"
-double_tap = "WM(J,LCtrl|LAlt)"
-hold_after_tap = "No"
-profile = "vil_250"
-
-[[behavior.morse.morses]]
-tap = "WM(L,LCtrl|LAlt)"
-hold = "WM(N,LCtrl|LAlt)"
-double_tap = "WM(M,LCtrl|LAlt)"
-hold_after_tap = "No"
-profile = "vil_250"
-
-[[behavior.morse.morses]]
-tap = "WM(O,LCtrl|LAlt)"
-hold = "No"
-double_tap = "WM(P,LCtrl|LAlt)"
-hold_after_tap = "No"
-profile = "vil_250"
-
-[[behavior.morse.morses]]
-tap = "WM(D,LCtrl)"
-hold = "No"
-double_tap = "WM(H,LCtrl)"
-hold_after_tap = "No"
-profile = "vil_250"
-
-[[behavior.morse.morses]]
-tap = "No"
-hold = "No"
-double_tap = "No"
-hold_after_tap = "No"
-profile = "vil_250"
-
-[[behavior.macros.macros]]
-operations = [{ operation = "down", keycode = "LAlt" }, { operation = "up", keycode = "LAlt" }, { operation = "tap", keycode = "H" }, { operation = "tap", keycode = "V" }, { operation = "tap", keycode = "T" }]
-
-[[behavior.macros.macros]]
-operations = [{ operation = "tap", keycode = "LCtrl" }, { operation = "tap", keycode = "LCtrl" }]
-
-[[behavior.macros.macros]]
-operations = [{ operation = "down", keycode = "LShift" }, { operation = "tap", keycode = "Kc8" }, { operation = "tap", keycode = "Kc9" }, { operation = "up", keycode = "LShift" }, { operation = "tap", keycode = "Left" }]
-
-[[behavior.macros.macros]]
-operations = [{ operation = "down", keycode = "LAlt" }, { operation = "up", keycode = "LAlt" }, { operation = "text", text = "hba" }]
-
-[[behavior.macros.macros]]
-operations = [{ operation = "tap", keycode = "RightBracket" }, { operation = "tap", keycode = "NonusHash" }, { operation = "tap", keycode = "Left" }]
-
-[[behavior.macros.macros]]
-operations = [{ operation = "down", keycode = "LShift" }, { operation = "tap", keycode = "RightBracket" }, { operation = "tap", keycode = "NonusHash" }, { operation = "up", keycode = "LShift" }, { operation = "tap", keycode = "Left" }]
-
-[[behavior.macros.macros]]
-operations = [{ operation = "down", keycode = "LShift" }, { operation = "tap", keycode = "Comma" }, { operation = "tap", keycode = "Dot" }, { operation = "up", keycode = "LShift" }, { operation = "tap", keycode = "Left" }]
-
-[[behavior.macros.macros]]
-operations = []
-
-[[behavior.macros.macros]]
-operations = []
-
-[[behavior.macros.macros]]
-operations = []
-
-[[behavior.macros.macros]]
-operations = []
-
-[[behavior.macros.macros]]
-operations = []
-
-[[behavior.macros.macros]]
-operations = []
-
-[[behavior.macros.macros]]
-operations = []
-
-[[behavior.macros.macros]]
-operations = []
-
-[[behavior.macros.macros]]
-operations = []
-
-[[behavior.macros.macros]]
-operations = []
-
-[[behavior.macros.macros]]
-operations = []
-
-[[behavior.macros.macros]]
-operations = []
-
-[[behavior.macros.macros]]
-operations = []
-
-[[behavior.macros.macros]]
-operations = []
-
-[[behavior.macros.macros]]
-operations = []
-
-[[behavior.macros.macros]]
-operations = []
-
-[[behavior.macros.macros]]
-operations = []
-
-[[behavior.macros.macros]]
-operations = []
-
-[[behavior.macros.macros]]
-operations = []
-
-[[behavior.macros.macros]]
-operations = []
-
-[[behavior.macros.macros]]
-operations = []
-
-[[behavior.macros.macros]]
-operations = []
-
-[[behavior.macros.macros]]
-operations = []
-
-[[behavior.macros.macros]]
-operations = []
-
-[[behavior.macros.macros]]
-operations = []
 
 [aliases]
 # User0 - User(N-1): switch to specific profile, where N is ble_profiles_num
@@ -486,23 +157,23 @@ bt_switch = "User8"
 [[layer]]
 name = "Layer 0 - Default"
 keys = """
-Q  W  E  R  T  Y  U  I  O  P
-A  S  D  F  G  _  LT(4,International4)  H  J  K  L  TD(4)
-Z  X  C  V  B  TD(2)  International5  N  M  Comma  Dot  TD(3)
-TD(0)  TD(1)  LAlt  LT(3,Tab)  LT(2,Escape)  LT(1,Space)  Enter  Backspace  Delete
+MT(Q,LGui)      MT(W,LAlt)     E     R          LT(7,T)                                      LT(7,Y)        U   I      O     P
+MT(A,LCtrl)     S              D     F          G             _             _                H              J   K      L     LT(6,Minus)
+MT(Z,LShift)    X              C     V          B             _             _                N              M   Comma  Dot   Slash
+Lctrl           LGui           LAlt  Language2  LT(1,Space)   LT(2,Tab)     LT(2,Backspace)  LT(1,Enter)                     Escape
 No  No  No  No
 No  No  No  No
 No  No  No  No
 """
-encoders = [["MouseWheelUp", "MouseWheelDown"]]
+encoders = [["PageDown", "PageUp"]]
 
 [[layer]]
 name = "Layer 1"
 keys = """
-F1  F2  MouseWheelDown  F3  F5  F6  F7  MouseBtn4  F9  F10
-TD(5)  MouseWheelLeft  MouseWheelUp  MouseWheelRight  TD(6)  _  _  WM(Tab,LCtrl|LAlt)  MouseBtn1  MouseBtn3  MouseBtn2  Macro1
-WM(V,LGui)  WM(X,LCtrl)  WM(C,LCtrl)  TD(7)  WM(Semicolon,LCtrl|LShift)  _  _  TD(8)  TD(9)  MouseBtn5  No  No
-_  _  _  _  _  _  _  _  _
+_    7    8    9    _                    _    _    _    _    _
+_    4    5    6    _        _      _    _    _    _    _    _
+0    1    2    3    _        _      _    _    _    _    _    _
+_    _    _    _    Enter    _      _    _                   _
 No  No  No  No
 No  No  No  No
 No  No  No  No
@@ -512,10 +183,10 @@ encoders = [["_", "_"]]
 [[layer]]
 name = "Layer 2"
 keys = """
-TD(10)  TD(20)  Up  KpPlus  KpMinus  TD(11)  Kp7  Kp8  Kp9  TD(14)
-TD(19)  Left  Down  Right  KpAsterisk  _  _  TD(12)  Kp4  Kp5  Kp6  TD(17)
-WM(PageUp,LCtrl)  WM(PageDown,LCtrl)  TD(13)  WM(Minus,LShift)  KpSlash  _  _  Kp0  Kp1  Kp2  Kp3  TD(18)
-_  _  _  _  _  _  _  _  _
+_    _    _    _    _                   _    _    _    _    _
+_    _    _    _    _    _         _    _    _    _    _    _
+_    _    _    _    _    _         _    _    _    _    _    _
+_    _    _    _    _    _         _    _                   _
 No  No  No  No
 No  No  No  No
 No  No  No  No
@@ -525,10 +196,10 @@ encoders = [["_", "_"]]
 [[layer]]
 name = "Layer 3"
 keys = """
-TD(29)  _  _  TD(30)  _  _  _  _  _  _
-TD(28)  TD(27)  TD(26)  TD(25)  TD(24)  _  _  _  TD(15)  TD(16)  TD(21)  _
-_  _  _  User10  _  _  _  _  International1  _  _  _
-_  _  _  _  _  _  _  _  _
+_    _    _    _    _                   _    _    _    _    _
+_    _    _    _    _    _         _    _    _    _    _    _
+_    _    _    No   _    _         _    _    _    _    _    _
+_    _    _    _    _    _         _    _                   _
 No  No  No  No
 No  No  No  No
 No  No  No  No
@@ -538,10 +209,10 @@ encoders = [["_", "_"]]
 [[layer]]
 name = "Layer 4"
 keys = """
-_  _  _  _  _  _  _  User7  User8  _
-_  _  Reboot  Bootloader  _  _  _  _  User4  _  _  _
-_  _  _  _  _  _  _  User0  User1  User2  User3  _
-_  _  _  _  _  _  _  _  _
+_    _    _    _    _                   _    _    _    _    _
+_    _    _    _    _    _         _    _    _    _    _    _
+_    _    _    _    _    _         _    _    _    _    _    _
+_    _    _    _    _    _         _    _                   _
 No  No  No  No
 No  No  No  No
 No  No  No  No
@@ -551,10 +222,10 @@ encoders = [["_", "_"]]
 [[layer]]
 name = "Layer 5"
 keys = """
-_  _  _  _  _  _  _  _  _  _
-_  _  _  _  _  _  _  _  _  _  _  _
-_  _  _  _  _  _  _  _  _  _  _  _
-_  _  _  _  _  _  _  _  _
+_    _    _    _    _                   _    _    _    _    _
+_    _    _    _    _    _         _    _    _    _    _    _
+_    _    _    _    _    _         _    _    _    _    _    _
+_    _    _    _    _    _         _    _                   _
 No  No  No  No
 No  No  No  No
 No  No  No  No
@@ -564,10 +235,10 @@ encoders = [["_", "_"]]
 [[layer]]
 name = "Layer 6"
 keys = """
-_  _  _  _  _  _  _  _  _  _
-_  _  _  _  _  _  _  _  _  _  _  _
-_  _  _  _  _  _  _  _  _  _  _  _
-_  _  _  _  _  _  _  _  _
+_    _    _    _    _                   _    _    _    _    _
+_    _    _    _    _    _         _    _    _    _    _    _
+_    _    _    _    _    _         _    _    _    _    _    _
+_    _    _    _    _    _         _    _                   _
 No  No  No  No
 No  No  No  No
 No  No  No  No
@@ -576,11 +247,12 @@ encoders = [["_", "_"]]
 
 [[layer]]
 name = "Layer 7 - Configuration"
+
 keys = """
-_  _  _  _  _  _  _  User7  User8  _
-_  _  Reboot  Bootloader  _  _  _  _  User4  _  _  _
-_  _  _  _  _  _  _  User0  User1  User2  User3  _
-_  _  _  _  _  _  _  _  _
+Bootloader  Reboot   _    _     _                           _          _          @bt_switch  Reboot     Bootloader
+_           _        _    _     _     _          @bt_prev   @bt_next   _          _           _          _
+_           _        _    _     _     _          @bt_sel_0  @bt_sel_1  @bt_sel_2  @bt_sel_3   @bt_sel_4  @bt_clr
+_           _        _    _     _     _          _          _                                            _
 No  No  No  No
 No  No  No  No
 No  No  No  No
