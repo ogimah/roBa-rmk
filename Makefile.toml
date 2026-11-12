@@ -31,7 +31,7 @@ args = [
     "--",
     "-O",
     "ihex",
-    "moNa2-central.hex",
+    "moNa2-coropit-central.hex",
 ]
 dependencies = ["build-central"]
 
@@ -49,7 +49,7 @@ args = [
     "--",
     "-O",
     "ihex",
-    "moNa2-peripheral.hex",
+    "moNa2-coropit-peripheral.hex",
 ]
 dependencies = ["build-peripheral"]
 
@@ -62,9 +62,9 @@ command = "cargo"
 args = [
     "hex-to-uf2",
     "--input-path",
-    "moNa2-central.hex",
+    "moNa2-coropit-central.hex",
     "--output-path",
-    "moNa2-central.uf2",
+    "moNa2-coropit-central.uf2",
     "--family",
     "nrf52840",
 ]
@@ -79,9 +79,9 @@ command = "cargo"
 args = [
     "hex-to-uf2",
     "--input-path",
-    "moNa2-peripheral.hex",
+    "moNa2-coropit-peripheral.hex",
     "--output-path",
-    "moNa2-peripheral.uf2",
+    "moNa2-coropit-peripheral.uf2",
     "--family",
     "nrf52840",
 ]
@@ -115,12 +115,12 @@ args = ["scripts/flash.sh", "${@}"]
 
 [tasks.flash-central]
 command = "cargo"
-args = ["make", "flash-uf2", "moNa2-central.uf2"]
+args = ["make", "flash-uf2", "moNa2-coropit-central.uf2"]
 dependencies = ["uf2-central"]
 
 [tasks.flash-peripheral]
 command = "cargo"
-args = ["make", "flash-uf2", "moNa2-peripheral.uf2"]
+args = ["make", "flash-uf2", "moNa2-coropit-peripheral.uf2"]
 dependencies = ["uf2-peripheral"]
 
 [tasks.flash]

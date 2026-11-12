@@ -17,6 +17,9 @@ class ConfigurationTests(unittest.TestCase):
     def test_existing_configuration_preserved(self):
         old = tomllib.loads(original("keyboard.toml").decode())
         new = tomllib.loads((ROOT / "keyboard.toml").read_text())
+        sensor = old["split"]["central"]["input_device"]["pmw3610"][0]
+        sensor["invert_x"] = True
+        sensor["invert_y"] = False
         for section in old.keys() - {"layout", "layer", "behavior", "event"}:
             self.assertEqual(new[section], old[section], section)
         self.assertEqual(new["layout"]["rows"], 5)

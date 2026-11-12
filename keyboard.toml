@@ -86,8 +86,9 @@ force_awake = false
 smart_mode = true
 
 cpi = 800
-# invert_x = true
-invert_y = true
+# COROPIT: rotate the tested moNa2 stock orientation by 180 degrees.
+invert_x = true
+invert_y = false
 # swap_xy = true
 
 [split.peripheral.input_device]
