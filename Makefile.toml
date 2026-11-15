@@ -31,7 +31,7 @@ args = [
     "--",
     "-O",
     "ihex",
-    "roBa-central.hex",
+    "roBa_RMK_GT_COROPIT-central.hex",
 ]
 dependencies = ["build-central"]
 
@@ -49,7 +49,7 @@ args = [
     "--",
     "-O",
     "ihex",
-    "roBa-peripheral.hex",
+    "roBa_RMK_GT_COROPIT-peripheral.hex",
 ]
 dependencies = ["build-peripheral"]
 
@@ -62,9 +62,9 @@ command = "cargo"
 args = [
     "hex-to-uf2",
     "--input-path",
-    "roBa-central.hex",
+    "roBa_RMK_GT_COROPIT-central.hex",
     "--output-path",
-    "roBa-central.uf2",
+    "roBa_RMK_GT_COROPIT-central.uf2",
     "--family",
     "nrf52840",
 ]
@@ -79,9 +79,9 @@ command = "cargo"
 args = [
     "hex-to-uf2",
     "--input-path",
-    "roBa-peripheral.hex",
+    "roBa_RMK_GT_COROPIT-peripheral.hex",
     "--output-path",
-    "roBa-peripheral.uf2",
+    "roBa_RMK_GT_COROPIT-peripheral.uf2",
     "--family",
     "nrf52840",
 ]
@@ -115,12 +115,12 @@ args = ["scripts/flash.sh", "${@}"]
 
 [tasks.flash-central]
 command = "cargo"
-args = ["make", "flash-uf2", "roBa-central.uf2"]
+args = ["make", "flash-uf2", "roBa_RMK_GT_COROPIT-central.uf2"]
 dependencies = ["uf2-central"]
 
 [tasks.flash-peripheral]
 command = "cargo"
-args = ["make", "flash-uf2", "roBa-peripheral.uf2"]
+args = ["make", "flash-uf2", "roBa_RMK_GT_COROPIT-peripheral.uf2"]
 dependencies = ["uf2-peripheral"]
 
 [tasks.flash]

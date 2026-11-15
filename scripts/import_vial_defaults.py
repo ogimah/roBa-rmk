@@ -55,11 +55,11 @@ def render(source,template):
     if source.get('key_override') or source.get('alt_repeat_key'):
         raise ValueError('Active overrides require explicit support')
     config=tomllib.loads(template)
-    mapping=[tuple(map(int,m)) for m in re.findall(r'\((\d+),(\d+)\)',config['layout']['matrix_map'])]
+    mapping=[tuple(map(int,m)) for m in re.findall(r'\((\d+),(\d+)\)',config['layout']['map'])]
     start = template.find('# Startup defaults imported')
     if start < 0: start = re.search(r'(?m)^\[behavior(?:[.\]])', template).start()
     prefix=template[:start]
-    aliases=template[template.index('[aliases]'):template.index('[[layer]]')]
+    aliases=template[template.index('[aliases]'):template.index('[[keymap.layer]]')]
     settings=source['settings']
     supported={'2','6','7','18','19','22','23','26','27'}
     if settings.keys()-supported:raise ValueError('Unrecognized behavior setting')
@@ -100,7 +100,7 @@ def render(source,template):
         if offset!=len(mapping):raise ValueError('Unexpected physical mapping')
         enc=source['encoder_layout'][i]
         if len(enc)!=1:raise ValueError('Expected exactly one encoder')
-        layers+=['[[layer]]',f'name = {q(config["layer"][i]["name"])}','keys = """',*lines,'"""',f'encoders = [[{q(key(enc[0][1]))}, {q(key(enc[0][0]))}]]','']
+        layers+=['[[keymap.layer]]',f'name = {q(config["keymap"]["layer"][i]["name"])}','keys = """',*lines,'"""',f'encoders = [[{q(key(enc[0][1]))}, {q(key(enc[0][0]))}]]','']
     return prefix+'\n'.join(b)+'\n'+aliases+'\n'.join(layers)+'\n# Physical central, split peripheral, and synthetic gesture events may publish concurrently.\n[event.keyboard]\npubs = 3\nsubs = 4\n\n# Resolved live user actions drive the assignable gesture trigger.\n[event.action]\npubs = 1\nsubs = 1\n'
 
 if __name__=='__main__':

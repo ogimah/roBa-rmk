@@ -5,7 +5,7 @@ use rmk::{
     core_traits::Runnable,
     event::{AxisEvent, AxisValType},
     hid::Report,
-    host::KeyboardContext,
+    host::HostService,
     keyboard::Keyboard,
     keymap::KeymapData,
     types::{
@@ -20,6 +20,44 @@ use std::{
     pin::pin,
     task::{Context, Poll, Waker},
 };
+
+// Exercise public Vial sessions: KeyboardContext became private in RMK 0.9.
+struct VialClient<'a>(HostService<'a>);
+impl<'a> VialClient<'a> {
+    fn new(map: &'a KeyMap<'a>) -> Self {
+        Self(HostService::new(map, &rmk::config::RmkConfig::default()))
+    }
+    async fn packet(&self, packet: [u8; 32]) {
+        let mut input = &packet[..];
+        let mut output = [0; 32];
+        let mut sink = &mut output[..];
+        self.0.run_session(&mut input, &mut sink).await;
+        assert!(sink.is_empty(), "Vial must return a complete response");
+        assert_ne!(output[0], 0xff, "Vial rejected the request");
+    }
+    async fn set_action(&self, layer: u8, row: u8, col: u8, action: KeyAction) {
+        let code = match action {
+            KeyAction::No => 0,
+            KeyAction::Single(Action::Key(KeyCode::Hid(k))) => k as u16,
+            KeyAction::Single(Action::User(id)) => 0x7e00 | u16::from(id),
+            KeyAction::Single(Action::TriggerMacro(id)) => 0x7700 | u16::from(id),
+            KeyAction::Single(Action::KeyWithModifier(k, m)) => {
+                (u16::from(m.into_packed_bits()) << 8) | k as u16
+            }
+            _ => panic!("Add the Vial encoding for this test action"),
+        };
+        let mut packet = [0; 32];
+        packet[..6].copy_from_slice(&[0x05, layer, row, col, (code >> 8) as u8, code as u8]);
+        self.packet(packet).await;
+    }
+    async fn write_macro_buffer(&self, offset: u16, bytes: &[u8]) {
+        assert!(bytes.len() <= 28);
+        let mut packet = [0; 32];
+        packet[..4].copy_from_slice(&[0x0f, (offset >> 8) as u8, offset as u8, bytes.len() as u8]);
+        packet[4..4 + bytes.len()].copy_from_slice(bytes);
+        self.packet(packet).await;
+    }
+}
 
 fn finish<F: Future>(future: F) -> F::Output {
     let mut future = pin!(future);
@@ -166,7 +204,7 @@ fn real_rmk_route_vial_binding_modifiers_macros_and_release() {
             "paired release must clear the report"
         );
     }
-    let ctx = KeyboardContext::new(&map);
+    let ctx = VialClient::new(&map);
     finish(ctx.set_action(3, 4, 1, key(HidKeyCode::E)));
     embassy_time::MockDriver::get().advance(embassy_time::Duration::from_millis(150));
     finish(router.on_pointing_event(motion(31, 0)));
@@ -187,7 +225,7 @@ fn real_rmk_route_vial_binding_modifiers_macros_and_release() {
         4,
         1,
         KeyAction::Single(Action::KeyWithModifier(
-            KeyCode::Hid(HidKeyCode::Tab),
+            HidKeyCode::Tab,
             ModifierCombination::new().with_left_ctrl(true),
         )),
     ));
@@ -330,7 +368,7 @@ fn live_trigger_remap_transparency_multiple_holds_and_release_after_edit() {
     let mut behavior = BehaviorConfig::default();
     let positional = PositionalConfig::default();
     let map = finish(KeyMap::new(&mut data, &mut behavior, &positional));
-    let ctx = KeyboardContext::new(&map);
+    let ctx = VialClient::new(&map);
     let mut keyboard = Keyboard::new(&map);
     let trigger = Cell::new(Trigger::default());
     let mut monitor = GestureTriggerMonitor::new(&trigger);
@@ -444,7 +482,7 @@ fn three_live_triggers_route_all_twelve_outputs_and_conflicts_capture_safely() {
     let mut behavior = BehaviorConfig::default();
     let positional = PositionalConfig::default();
     let map = finish(KeyMap::new(&mut data, &mut behavior, &positional));
-    let ctx = KeyboardContext::new(&map);
+    let ctx = VialClient::new(&map);
     let mut keyboard = Keyboard::new(&map);
     let trigger = Cell::new(Trigger::default());
     let mut monitor = GestureTriggerMonitor::new(&trigger);
@@ -606,7 +644,7 @@ fn st_live_binding_vertical_scroll_resets_and_gesture_priority() {
     let mut behavior = BehaviorConfig::default();
     let positional = PositionalConfig::default();
     let map = finish(KeyMap::new(&mut data, &mut behavior, &positional));
-    let ctx = KeyboardContext::new(&map);
+    let ctx = VialClient::new(&map);
     let mut keyboard = Keyboard::new(&map);
     let trigger = Cell::new(Trigger::default());
     let mut monitor = GestureTriggerMonitor::new(&trigger);
