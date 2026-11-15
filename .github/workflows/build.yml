@@ -1,4 +1,8 @@
 name: Build RMK firmware
+permissions:
+  contents: read
+  actions: read
+  checks: write
 on:
   workflow_call:
   workflow_dispatch:
@@ -45,7 +49,29 @@ jobs:
           cargo install --locked cargo-hex-to-uf2 --version 0.1.2
 
       - name: Build UF2
-        run: cargo make uf2
+        id: uf2
+        run: |
+          set -o pipefail
+          cargo make uf2 2>&1 | tee /tmp/uf2-build.log
+
+      - name: Expose compiler diagnostics through GitHub Checks API
+        if: failure() && steps.uf2.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs" > /tmp/build-jobs.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          jobs = json.loads(Path('/tmp/build-jobs.json').read_text())['jobs']
+          job = next(job for job in jobs if job['name'] == 'build')
+          Path('/tmp/check-id').write_text(str(job['id']))
+          log = Path('/tmp/uf2-build.log').read_text()[-55000:]
+          output = {'output': {'title': 'UF2 compiler diagnostics', 'summary': 'Build failed; compiler output follows.', 'text': '```text\n' + log + '\n```'}}
+          Path('/tmp/compiler-diagnostics.json').write_text(json.dumps(output))
+          PY
+          check_id=$(cat /tmp/check-id)
+          gh api --method PATCH "repos/$GITHUB_REPOSITORY/check-runs/$check_id" --input /tmp/compiler-diagnostics.json > /dev/null
 
       - name: Check dependency lockfile was preserved
         run: git diff --exit-code -- Cargo.lock
