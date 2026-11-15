@@ -18,9 +18,9 @@ class UserDefaultsTests(unittest.TestCase):
         self.config = tomllib.loads(self.text)
 
     def test_every_physical_key_and_encoder_matches_saved_layout(self):
-        positions = [tuple(map(int, x)) for x in re.findall(r"\((\d+),(\d+)\)", self.config["layout"]["matrix_map"])]
+        positions = [tuple(map(int, x)) for x in re.findall(r"\((\d+),(\d+)\)", self.config["layout"]["map"])]
         count = 0
-        for layer, config in enumerate(self.config["layer"]):
+        for layer, config in enumerate(self.config["keymap"]["layer"]):
             actual = config["keys"].split()
             self.assertEqual(len(actual), len(positions))
             for (r, c), code in zip(positions, actual):
@@ -55,9 +55,9 @@ class UserDefaultsTests(unittest.TestCase):
 
     def test_virtual_keys_empty_and_render_is_repeatable(self):
         self.assertEqual(imp.render(self.source, self.text), self.text)
-        for layer in self.config["layer"]:
+        for layer in self.config["keymap"]["layer"]:
             self.assertEqual(layer["keys"].split()[-12:], ["No"] * 12)
-        self.assertEqual(self.config["layer"][3]["keys"].split()[25], "User10")
+        self.assertEqual(self.config["keymap"]["layer"][3]["keys"].split()[25], "User10")
 
     def test_conversion_rejects_unknown_codes_and_handles_jis_modifiers(self):
         self.assertEqual(imp.key("LT3(KC_TAB)"), "LT(3,Tab)")

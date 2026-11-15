@@ -20,20 +20,14 @@ def original(name):
 
 class ConfigurationTests(unittest.TestCase):
     def test_existing_configuration_preserved(self):
-        old = tomllib.loads(original("keyboard.toml").decode())
+        old = tomllib.loads(subprocess.check_output(["git", "show", "5bd39f409e8b6272244e83c89ec4c801fe360ed6:keyboard.toml"], cwd=ROOT).decode())
         new = tomllib.loads((ROOT / "keyboard.toml").read_text())
-        for section in old.keys() - {"layout", "layer", "behavior", "event"}:
-            self.assertEqual(new[section], old[section], section)
-        self.assertEqual(new["layout"]["rows"], 5)
-        for name in old["layout"].keys() - {"rows", "matrix_map"}:
-            self.assertEqual(new["layout"][name], old["layout"][name])
-        positions = lambda s: re.findall(r"\(\d+,\d+\)", s)
-        self.assertEqual(positions(new["layout"]["matrix_map"]), positions(old["layout"]["matrix_map"]) + [f"(4,{c})" for c in range(11)] + ["(0,5)"])
-        for layer, (before, after) in enumerate(zip(old["layer"], new["layer"])):
-            for name in before.keys() - {"keys", "encoders"}:
-                self.assertEqual(before[name], after[name])
-        self.assertEqual(len(new["layer"]), 8)
-        for name in ["Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "src/peripheral.rs", "memory.x"]:
+        old["keyboard"]["name"] = old["keyboard"]["product_name"] = new["keyboard"]["name"]
+        old["host"].update(vial_enabled=True, rynk_enabled=False)
+        old["layout"]["map"] = old["layout"].pop("matrix_map")
+        old["keymap"] = {"layers": old["layout"].pop("layers"), "layer": old.pop("layer")}
+        self.assertEqual(new, old)
+        for name in ["rust-toolchain.toml", "src/peripheral.rs", "memory.x"]:
             self.assertEqual((ROOT / name).read_bytes(), original(name), name)
         # Wrapper mirrors these *processor* defaults; hardware inversion is untouched.
         sensor = new["split"]["central"]["input_device"]["pmw3610"][0]
@@ -54,15 +48,17 @@ class ConfigurationTests(unittest.TestCase):
     def test_all_tasks_are_awaited_and_original_motion_is_not_run_twice(self):
         source = (ROOT / "src/central.rs").read_text()
         self.assertIn("#[Overwritten(entry)]", source)
-        expected = {"adc_device", "trackball0_id0_device", "matrix", "storage", "keyboard", "trigger_monitor", "host_service", "usb_transport", "ble_transport", "wpm_processor", "watchdog_runner", "battery_processor", "trackball0_id0_processor"}
+        expected = {"adc_device", "trackball0_id0_device", "matrix", "storage", "keyboard", "trigger_monitor", "usb_transport", "ble_transport", "wpm_processor", "watchdog_runner", "battery_processor", "trackball0_id0_processor"}
         match = re.search(r"rmk::run_all!\((.*?)\)\s*\.await", source, re.S)
         self.assertIsNotNone(match, "A dropped run_all future would disable all core tasks")
         tasks = re.findall(r"\b\w+\b", match[1])
         self.assertEqual(set(tasks), expected)
         self.assertEqual(len(tasks), len(expected))
         self.assertLess(tasks.index("trigger_monitor"), tasks.index("trackball0_id0_processor"))
-        self.assertIn("run_peripheral_manager::<4, 6, 0, 0, _>", source)
-        self.assertIn("scan_peripherals", source)
+        self.assertIn("rmk::split::PeripheralMatrixConfig", source)
+        self.assertIn("ble_controller", source)
+        self.assertEqual(source.count(".with_host_service(&host_service)"), 2)
+        self.assertNotIn("scan_peripherals", source)
 
 
 class MigrationTests(unittest.TestCase):
