@@ -9,6 +9,7 @@ on:
   pull_request:
   push:
     branches: [upgrade/rmk-0.9-stock, upgrade/rmk-0.9-coropit]
+    paths-ignore: ['firmware/**']
 
 jobs:
   # build:
@@ -18,7 +19,11 @@ jobs:
   #     vial_json_path: "vial.json"
 
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    env:
+      CARGO_BUILD_JOBS: 4
+      LIBCLANG_PATH: /usr/lib/llvm-18/lib
+      BINDGEN_EXTRA_CLANG_ARGS: -resource-dir=/usr/lib/llvm-18/lib/clang/18
     steps:
       - name: Checkout code
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -26,7 +31,7 @@ jobs:
           fetch-depth: 0
 
       - name: Install clang dependencies
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libclang-dev gcc-arm-none-eabi libnewlib-dev
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libclang-18-dev libclang-common-18-dev gcc-arm-none-eabi libnewlib-dev
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
