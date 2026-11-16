@@ -26,6 +26,8 @@ class ConfigurationTests(unittest.TestCase):
         old["host"].update(vial_enabled=True, rynk_enabled=False)
         old["layout"]["map"] = old["layout"].pop("matrix_map")
         old["keymap"] = {"layers": old["layout"].pop("layers"), "layer": old.pop("layer")}
+        old['split']['central']['battery_user_description'] = 'Right'
+        old['split']['peripheral'][0].update(battery_adc_pin='P0_31', adc_divider_measured=510, adc_divider_total=1510, battery_user_description='Left')
         self.assertEqual(new, old)
         for name in ["rust-toolchain.toml", "src/peripheral.rs", "memory.x"]:
             self.assertEqual((ROOT / name).read_bytes(), original(name), name)
