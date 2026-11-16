@@ -35,6 +35,11 @@ It does not change main or the public distribution/release branches.
 The firmware and host tests both use `vendor/rmk`. See `vendor/README.md` for
 the upstream source manifest, original patch and encoder regression tests.
 
+Encoder wheel mappings now emit one discrete wheel report per input instead
+of entering the held-key repeat state. A missing encoder release can no longer
+leave wheel auto-repeat running indefinitely. Physical wheel keys still repeat
+while held. The current phase/resolution/debounce settings are unchanged.
+
 The full name is `roBa_RMK_GT_COROPIT`. Its Bluetooth display name is
 `roBa_GT_COROPIT`: RMK 0.9's legacy advertisement allows at most 16 bytes for
 the name with its current flags, services and appearance fields. The full
