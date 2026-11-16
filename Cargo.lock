@@ -1941,7 +1941,6 @@ checksum = "dc897dd8d9e8bd1ed8cdad82b5966c3e0ecae09fb1907d58efaa013543185d0a"
 [[package]]
 name = "rmk"
 version = "0.9.0"
-source = "git+https://github.com/rmk-rs/rmk?rev=986017d901c7609a9a79167686524f014effa68a#986017d901c7609a9a79167686524f014effa68a"
 dependencies = [
  "bt-hci",
  "byteorder",

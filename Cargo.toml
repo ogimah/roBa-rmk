@@ -57,6 +57,9 @@ xz2 = "0.1.7"
 json = "0.12"
 const-gen = "1.6"
 
+[patch."https://github.com/rmk-rs/rmk"]
+rmk = { path = "vendor/rmk" }
+
 # Split keyboard example
 [[bin]]
 name = "central"

@@ -10,3 +10,6 @@ publish = false
 rmk = { git = "https://github.com/rmk-rs/rmk", rev = "986017d901c7609a9a79167686524f014effa68a", default-features = false, features = ["std", "log", "vial", "host_lock", "async_matrix"] }
 embassy-time = { version = "0.5", features = ["mock-driver", "generic-queue-128"] }
 critical-section = { version = "1.2", features = ["std"] }
+
+[patch."https://github.com/rmk-rs/rmk"]
+rmk = { path = "../../vendor/rmk" }
