@@ -23,6 +23,12 @@ It does not change main or the public distribution/release branches.
 - Attach the Vial service to USB and BLE transports instead of running a separate host task.
 - Use public Vial sessions in host tests after KeyboardContext became private.
 - Use distinct device, Vial and UF2 names; preserve USB vendor/product IDs.
+- Backport RMK PR #1277 to the checked-in stable library: retain encoder
+  transitions across timed release/retry waits and initialize pin state without
+  a phantom step. All other library sources and dependency versions stay fixed.
+
+The firmware and host tests both use `vendor/rmk`. See `vendor/README.md` for
+the upstream source manifest, original patch and encoder regression tests.
 
 ## Before flashing
 

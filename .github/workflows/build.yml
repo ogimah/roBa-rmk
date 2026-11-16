@@ -46,6 +46,9 @@ jobs:
       - name: Test gesture routing with real RMK on host
         run: cargo test --locked --manifest-path tests/gesture-host/Cargo.toml --target x86_64-unknown-linux-gnu -- --test-threads=1
 
+      - name: Test encoder transition retention and first-sample baseline
+        run: cargo test --locked --manifest-path vendor/rmk/Cargo.toml --no-default-features --features std,log,async_matrix --target x86_64-unknown-linux-gnu --lib input_device::rotary_encoder -- --test-threads=1
+
       - name: Install tested firmware tools
         run: |
           cargo install --locked cargo-make --version 0.37.24

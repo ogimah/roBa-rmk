@@ -1,0 +1,2 @@
+# Preserve upstream patch context lines, including their required leading space.
+vendor/*.patch -whitespace
