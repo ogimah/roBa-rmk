@@ -23,6 +23,11 @@ It does not change main or the public distribution/release branches.
 - Attach the Vial service to USB and BLE transports instead of running a separate host task.
 - Use public Vial sessions in host tests after KeyboardContext became private.
 - Use distinct device, Vial and UF2 names; preserve USB vendor/product IDs.
+- Enable left/peripheral battery ADC on P0.31 using the existing XIAO divider
+  (510/1510) and existing active-low P0.14 measurement-enable output. The right
+  central continues to measure its own battery. BLE battery user descriptions
+  are `Right` and `Left`; the central exposes both readings. The host OS/app
+  determines whether both readings are shown in its user interface.
 - Backport RMK PR #1277 to the checked-in stable library: retain encoder
   transitions across timed release/retry waits and initialize pin state without
   a phantom step. All other library sources and dependency versions stay fixed.
