@@ -1653,6 +1653,19 @@ impl<'a> Keyboard<'a> {
 
     /// Process mouse key action with acceleration support.
     async fn process_action_mouse(&mut self, key: HidKeyCode, event: KeyboardEvent) {
+        if matches!(event.pos, KeyboardEventPos::RotaryEncoder(_)) {
+            let step = {
+                let config = self.keymap.mouse_key_config();
+                self.mouse.encoder_wheel_step(key, &config)
+            };
+            if let Some(report) = step {
+                if event.pressed {
+                    self.send_report(Report::MouseReport(report)).await;
+                    yield_now().await;
+                }
+                return;
+            }
+        }
         let action = {
             let config = self.keymap.mouse_key_config();
             self.mouse.process(key, event.pressed, &config)
@@ -2082,6 +2095,10 @@ pub enum HeldKeyDecision {
     // It will always be added to the decision list, and the decision will be made later
     Normal,
 }
+
+#[cfg(test)]
+#[path = "keyboard/encoder_wheel_tests.rs"]
+mod encoder_wheel_tests;
 
 #[cfg(test)]
 mod test {

@@ -169,6 +169,21 @@ impl MouseState {
         }
     }
 
+    /// A rotary encoder emits discrete wheel steps, never a held mouse key.
+    /// Build the initial wheel report in isolated state so a missing encoder
+    /// release cannot leave the persistent repeat counters active. Preserve
+    /// current mouse buttons and acceleration keys without adding X/Y motion.
+    pub fn encoder_wheel_step(&self, key: HidKeyCode, config: &MouseKeyConfig) -> Option<MouseReport> {
+        if !matches!(MouseCategory::try_from(key), Ok(MouseCategory::Wheel(_))) {
+            return None;
+        }
+        let mut step = Self::new();
+        step.accel = self.accel;
+        step.process(key, true, config);
+        step.report.buttons = self.report.buttons;
+        Some(step.get_report())
+    }
+
     /// Process a mouse key event (press or release).
     pub fn process(&mut self, key: HidKeyCode, pressed: bool, config: &MouseKeyConfig) -> MouseAction {
         if let Ok(category) = MouseCategory::try_from(key) {
