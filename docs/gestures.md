@@ -12,7 +12,7 @@ and setting V to No again is unnecessary: those are compiled defaults already.
 Only the four gesture outputs remain unassigned by request.
 
 This branch starts from the user's working unlock build,
-`24dbb3cfb997b61dc21640dd33017665412647b6`. Main, dependency versions,
+`18b6032d60b32ce3ca8103a261e678b07d2d4e29`. Main, dependency versions,
 Rust 1.96.0, physical wiring, Bluetooth settings, unlock keys and encoder
 assignments are unchanged. The earlier incomplete gesture scaffold is not used.
 

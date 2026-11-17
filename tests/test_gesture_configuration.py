@@ -8,7 +8,7 @@ import tomllib
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
-BASELINE = "24dbb3cfb997b61dc21640dd33017665412647b6"
+BASELINE = "18b6032d60b32ce3ca8103a261e678b07d2d4e29"
 spec = importlib.util.spec_from_file_location("migration", ROOT / "scripts/migrate_gesture_vil.py")
 migration = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(migration)
