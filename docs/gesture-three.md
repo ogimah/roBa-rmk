@@ -3,7 +3,7 @@ GT1..GT3 behavior and the reversed encoder defaults below are retained.
 
 # Three Vial gesture triggers and output crosses
 
-Based on the hardware-tested assignable-trigger build 8e52c68. The COROPIT
+Based on the hardware-tested assignable-trigger build f05796351c8e44b3e22dda9428b6668e16256d0a. The COROPIT
 variant uses the same implementation with the existing X/Y polarity difference.
 The previous single-trigger branches remain unchanged.
 
