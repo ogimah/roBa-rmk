@@ -6,8 +6,8 @@ import tomllib
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
-ORIGINAL = 'fc155034d164ad9fd0f617f9ea9874778af06084'
-WORKING = '5bd39f409e8b6272244e83c89ec4c801fe360ed6'
+ORIGINAL = 'c2aa7a8ecfb497d52c30c5bea6a58d5e033c1bd8'
+WORKING = '6e9e22f610c022e4a560f45c489fbd738121a7e0'
 
 class DistributionTests(unittest.TestCase):
     def test_original_physical_layout_and_encoder_defaults(self):
