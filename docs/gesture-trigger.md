@@ -3,7 +3,7 @@ The single-trigger documentation below describes the preceding working build.
 
 # Vial-assignable gesture trigger
 
-Based on the hardware-tested `feat/gesture-user-defaults` commit e323304.
+Based on the hardware-tested `feat/gesture-user-defaults` commit 8e2d98cdb616386f4b93c31f9f6f6b232fed417d.
 The previous stock and COROPIT branches remain available unchanged.
 
 ## Configure in Vial / Pipette

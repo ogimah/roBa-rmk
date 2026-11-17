@@ -1,6 +1,6 @@
 # ST: Vial-assignable vertical scroll trigger
 
-Based on the GT1/GT2/GT3 label build de370e0 (stock) / 5ecfeb2 (COROPIT).
+Based on the GT1/GT2/GT3 label build e2fcb00f7703888e7fa91b690c747486dfbbefb6 (stock) / 5ecfeb2 (COROPIT).
 Existing branches and main are retained. No dependency update is required.
 
 After flashing, reconnect Vial/Pipette to reload the firmware definition and
