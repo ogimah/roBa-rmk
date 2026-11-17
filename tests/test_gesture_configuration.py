@@ -8,7 +8,7 @@ import tomllib
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
-BASELINE = "24dbb3cfb997b61dc21640dd33017665412647b6"
+BASELINE = "18b6032d60b32ce3ca8103a261e678b07d2d4e29"
 spec = importlib.util.spec_from_file_location("migration", ROOT / "scripts/migrate_gesture_vil.py")
 migration = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(migration)
@@ -20,7 +20,7 @@ def original(name):
 
 class ConfigurationTests(unittest.TestCase):
     def test_existing_configuration_preserved(self):
-        old = tomllib.loads(subprocess.check_output(["git", "show", "dd6da1da885984298ceb2112dcf4255890ee5384:keyboard.toml"], cwd=ROOT).decode())
+        old = tomllib.loads(subprocess.check_output(["git", "show", "be2fc01338f413d1f9ba75f30ff74eef5f14886a:keyboard.toml"], cwd=ROOT).decode())
         new = tomllib.loads((ROOT / "keyboard.toml").read_text())
         old["keyboard"]["name"] = old["keyboard"]["product_name"] = new["keyboard"]["name"]
         old["host"].update(vial_enabled=True, rynk_enabled=False)
