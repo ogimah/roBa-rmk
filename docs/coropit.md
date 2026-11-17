@@ -22,7 +22,7 @@ remains applicable; the old branches are retained as hardware-tested backups.
 
 This branch is for roBaish/moNa2 with the COROPIT replacement trackball. The
 stock-trackball build is retained on `feat/gesture-user-defaults` at
-`e323304c8f7c208f38c685d1348d07d53f3a9a0e`, which the user confirmed working.
+`8e2d98cdb616386f4b93c31f9f6f6b232fed417d`, which the user confirmed working.
 
 Reference supplied by the user:
 https://github.com/black-trooper/zmk-config-moNa2/commit/c1f7dcc5453e3a5b96738811c68e6c66e976c586
