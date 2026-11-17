@@ -4,7 +4,7 @@ import tomllib
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
-BASE = '5bd39f409e8b6272244e83c89ec4c801fe360ed6'
+BASE = '6e9e22f610c022e4a560f45c489fbd738121a7e0'
 
 class TriggerConfigurationTests(unittest.TestCase):
     def test_both_batteries_have_adc_and_measurement_enable(self):
