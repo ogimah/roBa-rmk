@@ -12,6 +12,7 @@ rynk_enabled = false
 unlock_keys = [[0, 6], [0, 10]]
 
 [rmk]
+fork_max_num = 32
 ble_profiles_num = 5
 morse_max_num = 32
 macro_space_size = 512

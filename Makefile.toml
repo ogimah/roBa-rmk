@@ -31,7 +31,7 @@ args = [
     "--",
     "-O",
     "ihex",
-    "roBa_RMK_GT-central.hex",
+    "roBa_RMK_GT_OverrideTest-central.hex",
 ]
 dependencies = ["build-central"]
 
@@ -49,7 +49,7 @@ args = [
     "--",
     "-O",
     "ihex",
-    "roBa_RMK_GT-peripheral.hex",
+    "roBa_RMK_GT_OverrideTest-peripheral.hex",
 ]
 dependencies = ["build-peripheral"]
 
@@ -62,9 +62,9 @@ command = "cargo"
 args = [
     "hex-to-uf2",
     "--input-path",
-    "roBa_RMK_GT-central.hex",
+    "roBa_RMK_GT_OverrideTest-central.hex",
     "--output-path",
-    "roBa_RMK_GT-central.uf2",
+    "roBa_RMK_GT_OverrideTest-central.uf2",
     "--family",
     "nrf52840",
 ]
@@ -79,9 +79,9 @@ command = "cargo"
 args = [
     "hex-to-uf2",
     "--input-path",
-    "roBa_RMK_GT-peripheral.hex",
+    "roBa_RMK_GT_OverrideTest-peripheral.hex",
     "--output-path",
-    "roBa_RMK_GT-peripheral.uf2",
+    "roBa_RMK_GT_OverrideTest-peripheral.uf2",
     "--family",
     "nrf52840",
 ]
@@ -115,12 +115,12 @@ args = ["scripts/flash.sh", "${@}"]
 
 [tasks.flash-central]
 command = "cargo"
-args = ["make", "flash-uf2", "roBa_RMK_GT-central.uf2"]
+args = ["make", "flash-uf2", "roBa_RMK_GT_OverrideTest-central.uf2"]
 dependencies = ["uf2-central"]
 
 [tasks.flash-peripheral]
 command = "cargo"
-args = ["make", "flash-uf2", "roBa_RMK_GT-peripheral.uf2"]
+args = ["make", "flash-uf2", "roBa_RMK_GT_OverrideTest-peripheral.uf2"]
 dependencies = ["uf2-peripheral"]
 
 [tasks.flash]

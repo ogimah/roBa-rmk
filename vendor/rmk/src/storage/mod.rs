@@ -1146,4 +1146,55 @@ mod tests {
             assert_eq!(keymap.layout_option(), 42);
         });
     }
+
+    #[cfg(feature="vial")]
+    #[test]
+    fn vial_override_flash_task_reboot_and_readback() {
+        use crate::config::PositionalConfig;
+        use crate::host::context::KeyboardContext;
+        use crate::host::via::test_process_vial;
+        use crate::hid::ViaReport;
+        use crate::keymap::{KeymapData,KeyMap};
+        use crate::core_traits::Runnable;
+        use crate::config::VialConfig;
+        block_on(async {
+            FLASH_CHANNEL.clear();
+            FLASH_OPERATION_FINISHED.reset();
+            type Flash=TestFlash<65536,4096,4>;
+            let initial=[[[KeyAction::No]]];
+            let encoders:Option<&mut [[EncoderAction;0];1]>=None;
+            let storage_config=RuntimeStorageConfig {num_sectors: 8,..Default::default()};
+            let mut storage=Storage::<Flash,1,1,1,0>::new(Flash::new(),&initial,&encoders,&storage_config,&RuntimeBehaviorConfig::default()).await;
+            let mut data=KeymapData::new(initial);
+            let mut behavior=RuntimeBehaviorConfig::default();
+            let positional=PositionalConfig::<1,1>::default();
+            let keymap=KeyMap::new(&mut data,&mut behavior,&positional).await;
+            let ctx=KeyboardContext::new(&keymap);
+            let wire=[0x59,0,0x1e,0,0xff,0xff,0x11,0,0,0xa7];
+            let mut request=ViaReport::default();
+            request.output_data[..4].copy_from_slice(&[0xfe,0x0d,6,31]);
+            request.output_data[4..14].copy_from_slice(&wire);
+            #[cfg(feature="host_lock")]
+            let locker=crate::host::lock::HostLock::new(&[],&keymap,true,embassy_time::Duration::from_millis(100));
+            test_process_vial(&mut request,&VialConfig::default(),#[cfg(feature="host_lock")] &locker,&ctx).await;
+            assert_eq!(request.input_data[0],0);
+            // Execute the real background flash consumer, not a serialization-only roundtrip.
+            let done=embassy_futures::select::select(storage.run(),FLASH_OPERATION_FINISHED.wait()).await;
+            assert!(matches!(done,embassy_futures::select::Either::Second(true)));
+            let (flash,_)=storage.flash.destroy();
+            // Recreate storage and keymap with fresh configuration, as after a reboot.
+            let mut storage=Storage::<Flash,1,1,1,0>::new(flash,&initial,&encoders,&storage_config,&RuntimeBehaviorConfig::default()).await;
+            let mut fresh_data=KeymapData::new(initial);
+            let mut fresh_behavior=RuntimeBehaviorConfig::default();
+            let fresh=KeyMap::new_from_storage(&mut fresh_data,Some(&mut storage),&mut fresh_behavior,&positional).await;
+            let ctx=KeyboardContext::new(&fresh);
+            let mut readback=ViaReport::default();
+            readback.output_data[..4].copy_from_slice(&[0xfe,0x0d,5,31]);
+            #[cfg(feature="host_lock")]
+            let locker=crate::host::lock::HostLock::new(&[],&fresh,true,embassy_time::Duration::from_millis(100));
+            test_process_vial(&mut readback,&VialConfig::default(),#[cfg(feature="host_lock")] &locker,&ctx).await;
+            assert_eq!(readback.input_data[0],0);
+            assert_eq!(&readback.input_data[1..11],&wire);
+        });
+    }
 }

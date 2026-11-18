@@ -1,7 +1,10 @@
 use byteorder::{BigEndian, ByteOrder, LittleEndian};
 use rmk_types::action::KeyAction;
-use rmk_types::constants::{COMBO_MAX_LENGTH, COMBO_MAX_NUM, MORSE_MAX_NUM};
+use rmk_types::constants::{COMBO_MAX_LENGTH, COMBO_MAX_NUM, FORK_MAX_NUM, MORSE_MAX_NUM};
+use rmk_types::fork::{Fork, ForkOptions, StateBits};
+use rmk_types::modifier::ModifierCombination;
 use rmk_types::morse::{DOUBLE_TAP, HOLD, HOLD_AFTER_TAP, Morse, MorseMode, TAP};
+use rmk_types::protocol::vial::VIAL_KEY_OVERRIDE_OPTION_BITS;
 use rmk_types::protocol::vial::{SettingKey, VIAL_EP_SIZE, VIAL_PROTOCOL_VERSION, VialCommand, VialDynamic};
 
 use crate::config::VialConfig;
@@ -262,8 +265,7 @@ pub(crate) async fn process_vial<'a>(
                     debug!("DynamicEntryOp - DynamicVialGetNumberOfEntries");
                     report.input_data[0] = core::cmp::min(MORSE_MAX_NUM, 255) as u8; // Tap dance entries
                     report.input_data[1] = core::cmp::min(COMBO_MAX_NUM, 255) as u8; // Combo entries
-                    // TODO: Support dynamic key override
-                    report.input_data[2] = 0; // Key override entries
+                    report.input_data[2] = core::cmp::min(FORK_MAX_NUM, 255) as u8; // Key override entries
                     report.input_data[31] = 1 // Enable caps word
                 }
                 VialDynamic::DynamicVialMorseGet => {
@@ -377,12 +379,19 @@ pub(crate) async fn process_vial<'a>(
                     ctx.set_combo(combo_idx, config).await;
                 }
                 VialDynamic::DynamicVialKeyOverrideGet => {
-                    warn!("DynamicEntryOp - DynamicVialKeyOverrideGet -- to be implemented");
-                    report.input_data.fill(0x00);
+                    report.input_data.fill(0);
+                    if let Some(fork) = ctx.get_fork(report.output_data[3]) {
+                        report.input_data[1..11].copy_from_slice(&fork_to_vial_key_override(&fork));
+                    } else {
+                        report.input_data[0] = 1;
+                    }
                 }
                 VialDynamic::DynamicVialKeyOverrideSet => {
-                    warn!("DynamicEntryOp - DynamicVialKeyOverrideSet -- to be implemented");
-                    report.input_data.fill(0x00);
+                    let fork = vial_key_override_to_fork(&report.output_data[4..14]);
+                    report.input_data.fill(0);
+                    if !ctx.set_fork(report.output_data[3], fork).await {
+                        report.input_data[0] = 1;
+                    }
                 }
                 VialDynamic::Unhandled => {
                     warn!("DynamicEntryOp - Unhandled -- subcommand not recognized");
@@ -421,6 +430,53 @@ pub(crate) async fn process_vial<'a>(
             ctx.set_encoder_direction(layer, index, clockwise == 1, action).await;
         }
         _ => (),
+    }
+}
+
+/// Serialize a fork into Vial's 10-byte `vial_key_override_entry_t` (little endian).
+///
+/// Best-effort where forks are richer than key overrides: LED/mouse match
+/// conditions and a custom `negative_output` are not representable.
+fn fork_to_vial_key_override(fork: &Fork) -> [u8; 10] {
+    let mut entry = [0u8; 10];
+    if fork.trigger == KeyAction::No {
+        return entry;
+    }
+    LittleEndian::write_u16(&mut entry[0..2], to_via_keycode(fork.trigger));
+    LittleEndian::write_u16(&mut entry[2..4], to_via_keycode(fork.positive_output));
+    LittleEndian::write_u16(&mut entry[4..6], fork.layers.unwrap_or(0xFFFF));
+    entry[6] = fork.match_any.modifiers.into_bits();
+    entry[7] = fork.match_none.modifiers.into_bits();
+    entry[8] = fork.suppressed_modifiers.into_bits();
+    entry[9] = fork.options.into_bits() & VIAL_KEY_OVERRIDE_OPTION_BITS;
+    entry
+}
+
+/// Deserialize Vial's 10-byte `vial_key_override_entry_t` into a fork.
+fn vial_key_override_to_fork(entry: &[u8]) -> Fork {
+    let trigger = from_via_keycode(LittleEndian::read_u16(&entry[0..2]));
+    if trigger == KeyAction::No {
+        return Fork::empty();
+    }
+    let layers = LittleEndian::read_u16(&entry[4..6]);
+    Fork {
+        trigger,
+        // Pass the trigger through when the condition is not met
+        negative_output: trigger,
+        positive_output: from_via_keycode(LittleEndian::read_u16(&entry[2..4])),
+        match_any: StateBits {
+            modifiers: ModifierCombination::from_bits(entry[6]),
+            ..Default::default()
+        },
+        match_none: StateBits {
+            modifiers: ModifierCombination::from_bits(entry[7]),
+            ..Default::default()
+        },
+        suppressed_modifiers: ModifierCombination::from_bits(entry[8]),
+        layers: if layers == 0xFFFF { None } else { Some(layers) },
+        options: ForkOptions::from_bits(entry[9] & VIAL_KEY_OVERRIDE_OPTION_BITS),
+        // QMK key overrides don't cascade
+        bindable: false,
     }
 }
 

@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
   pull_request:
   push:
-    branches: [upgrade/rmk-0.9-stock, upgrade/rmk-0.9-coropit]
+    branches: [test/vial-overrides-stock]
     paths-ignore: ['firmware/**']
 
 jobs:
@@ -46,11 +46,14 @@ jobs:
       - name: Test gesture routing with real RMK on host
         run: cargo test --locked --manifest-path tests/gesture-host/Cargo.toml --target x86_64-unknown-linux-gnu -- --test-threads=1
 
-      - name: Test encoder transition retention and first-sample baseline
-        run: cargo test --locked --manifest-path vendor/rmk/Cargo.toml --no-default-features --features std,log,async_matrix --target x86_64-unknown-linux-gnu --lib input_device::rotary_encoder -- --test-threads=1
+      - name: Install pinned isolated test runner
+        run: |
+          curl -fL https://github.com/nextest-rs/nextest/releases/download/cargo-nextest-0.9.152/cargo-nextest-0.9.152-x86_64-unknown-linux-gnu.tar.gz -o /tmp/nextest.tar.gz
+          echo 'd039b43c3e0958441b6ad0a39c8884d018b3d2e8fb9928f209074b1100b5e17a  /tmp/nextest.tar.gz' | sha256sum -c -
+          tar -xzf /tmp/nextest.tar.gz -C "$HOME/.cargo/bin" cargo-nextest
 
-      - name: Test encoder wheel impulses and physical wheel repeat isolation
-        run: cargo test --locked --manifest-path vendor/rmk/Cargo.toml --no-default-features --features std,log,async_matrix --target x86_64-unknown-linux-gnu --lib keyboard::encoder_wheel_tests -- --test-threads=1
+      - name: Test Vial overrides, flash reboot, and existing library behavior
+        run: bash tests/run_override_tests.sh
 
       - name: Install tested firmware tools
         run: |
@@ -95,12 +98,12 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           archive: false
-          path: roBa_RMK_GT-central.uf2
+          path: roBa_RMK_GT_OverrideTest-central.uf2
 
       - name: Upload artifact (peripheral)
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           archive: false
-          path: roBa_RMK_GT-peripheral.uf2
+          path: roBa_RMK_GT_OverrideTest-peripheral.uf2
 
 

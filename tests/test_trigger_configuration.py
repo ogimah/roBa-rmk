@@ -24,6 +24,7 @@ class TriggerConfigurationTests(unittest.TestCase):
         old['keymap'] = {'layers': old['layout'].pop('layers'), 'layer': old.pop('layer')}
         old['split']['central']['battery_user_description'] = 'Right'
         old['split']['peripheral'][0].update(battery_adc_pin='P0_31', adc_divider_measured=510, adc_divider_total=1510, battery_user_description='Left')
+        old["rmk"]["fork_max_num"] = 32
         self.assertEqual(new, old)
         for name in ['rust-toolchain.toml', 'memory.x', 'src/peripheral.rs', 'config/261109_robaish.vil', 'src/gesture.rs', 'src/pointingproccontroller.rs']:
             self.assertEqual((ROOT / name).read_bytes(), subprocess.check_output(['git', 'show', f'{BASE}:{name}'], cwd=ROOT), name)
