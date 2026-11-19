@@ -354,3 +354,6 @@ mod tests {
         });
     }
 }
+
+#[cfg(test)]
+pub(crate) use vial::process_vial as test_process_vial;

@@ -59,6 +59,8 @@ const-gen = "1.6"
 
 [patch."https://github.com/rmk-rs/rmk"]
 rmk = { path = "vendor/rmk" }
+rmk-types = { path = "vendor/rmk-types" }
+rmk-macro = { path = "vendor/rmk-macro" }
 
 # Split keyboard example
 [[bin]]

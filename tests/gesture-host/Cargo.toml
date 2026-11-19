@@ -16,3 +16,5 @@ rmk-config = { git = "https://github.com/rmk-rs/rmk", rev = "986017d901c7609a9a7
 
 [patch."https://github.com/rmk-rs/rmk"]
 rmk = { path = "../../vendor/rmk" }
+rmk-types = { path = "../../vendor/rmk-types" }
+rmk-macro = { path = "../../vendor/rmk-macro" }

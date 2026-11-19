@@ -1992,7 +1992,6 @@ dependencies = [
 [[package]]
 name = "rmk-macro"
 version = "0.8.0"
-source = "git+https://github.com/rmk-rs/rmk?rev=986017d901c7609a9a79167686524f014effa68a#986017d901c7609a9a79167686524f014effa68a"
 dependencies = [
  "cargo_toml",
  "darling 0.24.1",
@@ -2008,7 +2007,6 @@ dependencies = [
 [[package]]
 name = "rmk-types"
 version = "0.4.0"
-source = "git+https://github.com/rmk-rs/rmk?rev=986017d901c7609a9a79167686524f014effa68a#986017d901c7609a9a79167686524f014effa68a"
 dependencies = [
  "bitfield-struct",
  "defmt 1.0.1",
