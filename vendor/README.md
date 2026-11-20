@@ -73,3 +73,19 @@ acceptance tests use production constants; the broad upstream suite supplies
 only auto-mouse test capacity (2 instead of disabled 0), without changing the
 production keyboard configuration. This avoids the upstream auto-mouse tests'
 zero-capacity return vectors; it does not add auto-mouse firmware behavior.
+
+## MB1 drag-lock trial
+
+This stock-only trial adds User14 (DD_ON / DD+) and User15 (DD_OFF / DD-).
+`state.rs` owns a volatile latch synchronized with the existing connection lock.
+`channel.rs` overlays it on every mouse report at enqueue time, re-sampling it
+following backpressure. Raw physical button state stays independent. Both
+keyboard and mouse all-up reports are queued on an output/session change.
+`keyboard.rs` dispatches the two tap commands and includes the latch in native
+mouse-condition fork decisions. Pointing, gesture, and wheel processing remain
+unchanged. Normal duplicate-MB1 holder behavior outside DD is not reimplemented.
+No code from the draft #1245 with its newer Macro event positions is copied.
+
+See `docs/drag-lock-mb1.md` and `keyboard/drag_tests.rs`. USB/BLE/profile and queue
+backpressure tests run with `_ble,split` enabled. The host routing suite also
+covers DD with live Vial assignments and all three GT banks plus ST.

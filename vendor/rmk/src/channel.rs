@@ -17,6 +17,7 @@ use crate::hid::{KeyboardReport, Report};
 #[cfg(feature = "storage")]
 use crate::{FLASH_CHANNEL_SIZE, storage::FlashOperationMessage};
 use crate::{REPORT_CHANNEL_SIZE, RawMutex};
+use usbd_hid::descriptor::MouseReport;
 
 type ReportChannel = Channel<RawMutex, Report, REPORT_CHANNEL_SIZE>;
 
@@ -50,15 +51,23 @@ fn active_report_channel() -> Option<(ConnectionType, &'static ReportChannel)> {
 }
 
 /// Reports generated while no transport is selected are dropped on the floor.
-pub(crate) async fn send_hid_report(mut report: Report) {
+pub(crate) async fn send_hid_report(report: Report) {
     let Some((transport, ch)) = active_report_channel() else {
         return;
     };
 
     loop {
-        match ch.try_send(report) {
-            Ok(()) => return,
-            Err(TrySendError::Full(r)) => report = r,
+        // Keep the producer's raw buttons. If a full queue delays this send,
+        // re-sample DD after the wait rather than replaying a stale drag bit.
+        let sent = crate::state::CONNECTION_STATUS.lock(|status| {
+            if status.get().decide_active() != Some(transport) {
+                return None;
+            }
+            Some(ch.try_send(with_drag_buttons(report.clone())))
+        });
+        match sent {
+            None | Some(Ok(())) => return,
+            Some(Err(TrySendError::Full(_))) => {}
         }
 
         poll_fn(|cx| ch.poll_ready_to_send(cx)).await;
@@ -72,18 +81,34 @@ pub(crate) async fn send_hid_report(mut report: Report) {
 /// transport is selected. Use for producers where back-pressure would block
 /// the matrix scan (e.g. steno chord output).
 pub(crate) fn try_send_hid_report(report: Report) {
-    if let Some((_, ch)) = active_report_channel() {
-        let _ = ch.try_send(report);
-    }
+    crate::state::CONNECTION_STATUS.lock(|status| {
+        if let Some(ch) = status.get().decide_active().and_then(report_channel) {
+            let _ = ch.try_send(with_drag_buttons(report));
+        }
+    });
 }
 
-/// Drains queued reports for `transport` and leaves an all-up keyboard report
+fn with_drag_buttons(mut report: Report) -> Report {
+    if let Report::MouseReport(mouse) = &mut report {
+        mouse.buttons = crate::state::drag_buttons(mouse.buttons);
+    }
+    report
+}
+
+/// Drains queued reports for `transport` and leaves all-up keyboard/mouse reports
 /// for its writer. Called on active-transport flips so the previous host
-/// releases any pressed keys without replaying stale queued reports later.
+/// releases keys and buttons without replaying stale queued reports later.
 pub(crate) fn clear_and_release_report_channel(transport: ConnectionType) {
     if let Some(ch) = report_channel(transport) {
         ch.clear();
         let _ = ch.try_send(Report::KeyboardReport(KeyboardReport::default()));
+        let _ = ch.try_send(Report::MouseReport(MouseReport {
+            buttons: 0,
+            x: 0,
+            y: 0,
+            wheel: 0,
+            pan: 0,
+        }));
     }
 }
 
