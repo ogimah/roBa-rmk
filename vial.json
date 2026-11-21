@@ -76,8 +76,10 @@
             "title": "ST",
             "shortName": "ST"
         },
-        {"name":"DD_ON","title":"Hold left mouse button until DD_OFF","shortName":"DD+"},
-        {"name":"DD_OFF","title":"Release DD left mouse button latch","shortName":"DD-"}
+        {"name":"DD1+","title":"Hold left mouse button until DD1-","shortName":"DD1+"},
+        {"name":"DD1-","title":"Release DD left mouse button latch","shortName":"DD1-"},
+        {"name":"DD2+","title":"Hold right mouse button until DD2-","shortName":"DD2+"},
+        {"name":"DD2-","title":"Release DD right mouse button latch","shortName":"DD2-"}
     ],
     "layouts": {
         "keymap": [

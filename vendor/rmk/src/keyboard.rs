@@ -1904,9 +1904,9 @@ impl<'a> Keyboard<'a> {
     async fn process_user(&mut self, id: u8, event: KeyboardEvent) {
         // User0..9 are BLE/split actions; User10..13 are GT1..3/ST.
         // DD taps act on press only: key release does not end a drag.
-        if id == 14 || id == 15 {
+        if (14..=17).contains(&id) {
             if event.pressed {
-                crate::state::set_drag_mb1(id == 14);
+                crate::state::set_drag_button((id - 14) / 2, id % 2 == 0);
                 self.send_report(Report::MouseReport(usbd_hid::descriptor::MouseReport {
                     buttons: self.mouse.report.buttons,
                     x: 0, y: 0, wheel: 0, pan: 0

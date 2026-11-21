@@ -89,3 +89,12 @@ No code from the draft #1245 with its newer Macro event positions is copied.
 See `docs/drag-lock-mb1.md` and `keyboard/drag_tests.rs`. USB/BLE/profile and queue
 backpressure tests run with `_ble,split` enabled. The host routing suite also
 covers DD with live Vial assignments and all three GT banks plus ST.
+
+## MB1/MB2 independent latch extension
+
+User14/15 retain the left latch and are renamed DD1+/DD1-. User16/17 add
+the right latch as DD2+/DD2-. An AtomicU8 holds only bits 0 and 1; writes
+remain serialized with connection changes. Turning one button off never
+clears the other. Existing raw-button ownership, final report overlay,
+queue resampling and session reset paths are retained.
+See `docs/drag-lock-mb12.md`. No dependency versions or storage schema change.

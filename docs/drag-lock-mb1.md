@@ -1,3 +1,5 @@
+> この文書は旧MB1専用試験版の記録です。現行の左右対応版は [drag-lock-mb12.md](drag-lock-mb12.md) を参照してください。
+
 # MB1ドラッグ保持：純正トラックボール試験版
 
 対象：`feat/drag-lock-mb1-stock`。既存のGT1〜3・ST・Vial Override・ホイール対策を維持し、左ボタンだけの保持を追加した試験版です。公開版・COROPIT版は変更しません。

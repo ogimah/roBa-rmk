@@ -768,7 +768,7 @@ fn st_edges_do_not_discard_a_gesture_in_progress_and_virtual_st_cannot_arm() {
 }
 
 #[test]
-fn drag_live_vial_keys_keep_mb1_through_st_and_all_three_gesture_banks() {
+fn drag_live_vial_keys_keep_both_buttons_through_st_and_all_three_gesture_banks() {
     use crate::gesture::OUTPUT_POSITIONS;
     fn snapshot() -> (Vec<(u8, [u8; 6])>, Vec<(u8, i8, i8, i8, i8)>) {
         let (mut keys, mut mouse) = (vec![], vec![]);
@@ -799,6 +799,8 @@ fn drag_live_vial_keys_keep_mb1_through_st_and_all_three_gesture_banks() {
     let ctx = VialClient::new(&map);
     finish(ctx.set_action(0, 0, 0, KeyAction::Single(Action::User(14))));
     finish(ctx.set_action(0, 0, 1, KeyAction::Single(Action::User(15))));
+    finish(ctx.set_action(0, 0, 2, KeyAction::Single(Action::User(16))));
+    finish(ctx.set_action(0, 0, 3, KeyAction::Single(Action::User(17))));
     let mut keyboard = Keyboard::new(&map);
     let trigger = Cell::new(Trigger::default());
     let mut monitor = GestureTriggerMonitor::new(&trigger);
@@ -827,12 +829,15 @@ fn drag_live_vial_keys_keep_mb1_through_st_and_all_three_gesture_banks() {
     send!(KeyboardEvent::key(0, 0, true));
     send!(KeyboardEvent::key(0, 0, false));
     assert_eq!(snapshot().1, vec![(1, 0, 0, 0, 0)]);
+    send!(KeyboardEvent::key(0, 2, true));
+    send!(KeyboardEvent::key(0, 2, false));
+    assert_eq!(snapshot().1, vec![(3, 0, 0, 0, 0)]);
     send!(motion(4, 5));
-    assert_eq!(snapshot().1, vec![(1, 4, 5, 0, 0)]);
+    assert_eq!(snapshot().1, vec![(3, 4, 5, 0, 0)]);
     send!(KeyboardEvent::key(1, 1, true));
     snapshot();
     send!(motion(0, 8));
-    assert_eq!(snapshot().1, vec![(1, 0, 0, -1, 0)]);
+    assert_eq!(snapshot().1, vec![(3, 0, 0, -1, 0)]);
     for bank in 0..3u8 {
         send!(KeyboardEvent::key(1, bank + 3, true));
         snapshot();
@@ -850,12 +855,17 @@ fn drag_live_vial_keys_keep_mb1_through_st_and_all_three_gesture_banks() {
         send!(KeyboardEvent::key(1, bank + 3, false));
         snapshot();
         send!(motion(0, 8));
-        assert_eq!(snapshot().1, vec![(1, 0, 0, -1, 0)]);
+        assert_eq!(snapshot().1, vec![(3, 0, 0, -1, 0)]);
     }
     send!(KeyboardEvent::key(1, 1, false));
     snapshot();
     send!(KeyboardEvent::key(0, 1, true));
     send!(KeyboardEvent::key(0, 1, false));
+    assert_eq!(snapshot().1, vec![(2, 0, 0, 0, 0)]);
+    send!(motion(4, 5));
+    assert_eq!(snapshot().1, vec![(2, 4, 5, 0, 0)]);
+    send!(KeyboardEvent::key(0, 3, true));
+    send!(KeyboardEvent::key(0, 3, false));
     assert_eq!(snapshot().1, vec![(0, 0, 0, 0, 0)]);
     send!(motion(4, 5));
     assert_eq!(snapshot().1, vec![(0, 4, 5, 0, 0)]);

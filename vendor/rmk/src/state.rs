@@ -1,5 +1,5 @@
 use core::cell::Cell;
-use core::sync::atomic::{AtomicBool, Ordering};
+use core::sync::atomic::{AtomicU8, Ordering};
 
 use embassy_sync::blocking_mutex::Mutex;
 use rmk_types::ble::BleState;
@@ -17,17 +17,24 @@ pub(crate) static CONNECTION_STATUS: Mutex<RawMutex, Cell<ConnectionStatus>> =
     Mutex::new(Cell::new(ConnectionStatus::new()));
 
 // DD is volatile and independent of ordinary mouse-key holders.
-static DRAG_MB1: AtomicBool = AtomicBool::new(false);
+static DRAG_BUTTONS: AtomicU8 = AtomicU8::new(0);
 
 pub(crate) fn drag_buttons(buttons: u8) -> u8 {
-    buttons | u8::from(DRAG_MB1.load(Ordering::Relaxed))
+    buttons | DRAG_BUTTONS.load(Ordering::Relaxed)
 }
 
-pub(crate) fn set_drag_mb1(enabled: bool) {
-    // Share the routing lock with connection transitions. A command while
-    // disconnected cannot arm a drag that would leak into a later session.
+pub(crate) fn set_drag_button(button: u8, enabled: bool) {
+    if button > 1 {
+        return;
+    } // This trial supports MB1 and MB2 only.
     CONNECTION_STATUS.lock(|c| {
-        DRAG_MB1.store(enabled && c.get().decide_active().is_some(), Ordering::Relaxed);
+        if c.get().decide_active().is_none() {
+            DRAG_BUTTONS.store(0, Ordering::Relaxed);
+            return;
+        }
+        let mask = 1u8 << button;
+        let held = DRAG_BUTTONS.load(Ordering::Relaxed);
+        DRAG_BUTTONS.store(if enabled { held | mask } else { held & !mask }, Ordering::Relaxed);
     });
 }
 
@@ -73,7 +80,7 @@ pub(crate) fn update_status(f: impl FnOnce(&mut ConnectionStatus)) {
         if prev.decide_active() != new.decide_active()
             || (prev.decide_active() == Some(ConnectionType::Ble) && prev.ble.profile != new.ble.profile)
         {
-            DRAG_MB1.store(false, Ordering::Relaxed);
+            DRAG_BUTTONS.store(0, Ordering::Relaxed);
         }
         c.set(new);
         Some((prev, new))
