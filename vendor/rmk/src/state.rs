@@ -1,4 +1,5 @@
 use core::cell::Cell;
+use core::sync::atomic::{AtomicU8, Ordering};
 
 use embassy_sync::blocking_mutex::Mutex;
 use rmk_types::ble::BleState;
@@ -14,6 +15,28 @@ use crate::event::{ConnectionStatusChangeEvent, publish_event};
 /// change events fire on every transition.
 pub(crate) static CONNECTION_STATUS: Mutex<RawMutex, Cell<ConnectionStatus>> =
     Mutex::new(Cell::new(ConnectionStatus::new()));
+
+// DD is volatile and independent of ordinary mouse-key holders.
+static DRAG_BUTTONS: AtomicU8 = AtomicU8::new(0);
+
+pub(crate) fn drag_buttons(buttons: u8) -> u8 {
+    buttons | DRAG_BUTTONS.load(Ordering::Relaxed)
+}
+
+pub(crate) fn set_drag_button(button: u8, enabled: bool) {
+    if button > 1 {
+        return;
+    } // This trial supports MB1 and MB2 only.
+    CONNECTION_STATUS.lock(|c| {
+        if c.get().decide_active().is_none() {
+            DRAG_BUTTONS.store(0, Ordering::Relaxed);
+            return;
+        }
+        let mask = 1u8 << button;
+        let held = DRAG_BUTTONS.load(Ordering::Relaxed);
+        DRAG_BUTTONS.store(if enabled { held | mask } else { held & !mask }, Ordering::Relaxed);
+    });
+}
 
 pub(crate) fn active_transport() -> Option<ConnectionType> {
     CONNECTION_STATUS.lock(|c| c.get().decide_active())
@@ -54,6 +77,11 @@ pub(crate) fn update_status(f: impl FnOnce(&mut ConnectionStatus)) {
         if prev == new {
             return None;
         }
+        if prev.decide_active() != new.decide_active()
+            || (prev.decide_active() == Some(ConnectionType::Ble) && prev.ble.profile != new.ble.profile)
+        {
+            DRAG_BUTTONS.store(0, Ordering::Relaxed);
+        }
         c.set(new);
         Some((prev, new))
     }) else {
@@ -63,7 +91,7 @@ pub(crate) fn update_status(f: impl FnOnce(&mut ConnectionStatus)) {
     let prev_active = prev.decide_active();
     let new_active = new.decide_active();
 
-    if prev_active != new_active
+    if (prev_active != new_active || (prev_active == Some(ConnectionType::Ble) && prev.ble.profile != new.ble.profile))
         && let Some(prev_active) = prev_active
     {
         // Drain after the commit so any producer racing past the mutex reads
@@ -257,8 +285,11 @@ mod tests {
                 .expect("USB_REPORT_CHANNEL should contain keyboard all-up report"),
         );
         assert!(
+            matches!(USB_REPORT_CHANNEL.try_receive(), Ok(Report::MouseReport(r)) if r.buttons == 0 && r.x == 0 && r.y == 0 && r.wheel == 0 && r.pan == 0)
+        );
+        assert!(
             USB_REPORT_CHANNEL.try_receive().is_err(),
-            "USB_REPORT_CHANNEL should contain only the all-up report"
+            "USB_REPORT_CHANNEL should contain only the two all-up reports"
         );
     }
 
@@ -293,8 +324,11 @@ mod tests {
                 .expect("USB_REPORT_CHANNEL should contain keyboard all-up report"),
         );
         assert!(
+            matches!(USB_REPORT_CHANNEL.try_receive(), Ok(Report::MouseReport(r)) if r.buttons == 0 && r.x == 0 && r.y == 0 && r.wheel == 0 && r.pan == 0)
+        );
+        assert!(
             USB_REPORT_CHANNEL.try_receive().is_err(),
-            "USB_REPORT_CHANNEL should contain only the all-up report"
+            "USB_REPORT_CHANNEL should contain only the two all-up reports"
         );
     }
 
@@ -321,9 +355,10 @@ mod tests {
                 .try_receive()
                 .expect("BLE_REPORT_CHANNEL should contain keyboard all-up report"),
         );
+        assert!(matches!(BLE_REPORT_CHANNEL.try_receive(), Ok(Report::MouseReport(r)) if r.buttons == 0));
         assert!(
             BLE_REPORT_CHANNEL.try_receive().is_err(),
-            "BLE_REPORT_CHANNEL should contain only the all-up report"
+            "BLE_REPORT_CHANNEL should contain only the two all-up reports"
         );
     }
 

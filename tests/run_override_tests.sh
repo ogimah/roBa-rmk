@@ -2,9 +2,9 @@
 set -euo pipefail
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 cd "$repo"
-args=(--locked --manifest-path vendor/rmk/Cargo.toml --no-default-features --features std,log,async_matrix,vial,storage,host_lock --target x86_64-unknown-linux-gnu --lib)
+args=(--locked --manifest-path vendor/rmk/Cargo.toml --no-default-features --features std,log,async_matrix,vial,storage,host_lock,_ble,split --target x86_64-unknown-linux-gnu --lib)
 # Acceptance and retained encoder fixes use the exact production constants.
-cargo nextest run "${args[@]}" -E 'test(override) | test(test_fork) | test(encoder_wheel_tests) | test(rotary_encoder)'
+cargo nextest run "${args[@]}" -E 'test(override) | test(test_fork) | test(encoder_wheel_tests) | test(rotary_encoder) | test(drag_tests)'
 # Upstream auto-mouse unit tests construct up to two entries, while this
 # keyboard disables auto-mouse and resolves its capacity to zero. Give only
 # this broad library test run two slots; do not enable it in firmware.
