@@ -111,6 +111,10 @@ impl Runnable for GestureTriggerMonitor<'_> {
 mod tests;
 
 // The sole pointing subscriber replaces the original processor's runnable.
+// The single two-choice Vial layout option occupies bit 0 (0=Stock, 1=COROPIT).
+// Keep the tested stock PMW3610 hardware orientation; COROPIT adds 180 degrees
+// once, before the cursor/gesture/ST paths diverge.
+const COROPIT_OPTION: u32 = 1;
 #[processor(subscribe = [PointingEvent, PointingProcessorEvent])]
 pub struct GesturePointingProcessor<'a> {
     inner: PointingProcessor<'a>,
@@ -120,6 +124,7 @@ pub struct GesturePointingProcessor<'a> {
     gesture: Gesture,
     scroll: PointingProcessor<'a>,
     scroll_epoch: (u32, u32),
+    coropit: bool,
 }
 impl<'a> GesturePointingProcessor<'a> {
     pub fn new(
@@ -137,6 +142,7 @@ impl<'a> GesturePointingProcessor<'a> {
             gesture: Gesture::default(),
             scroll,
             scroll_epoch: (0, 0),
+            coropit: keymap.layout_option() & COROPIT_OPTION != 0,
         }
     }
     fn new_scroll(
@@ -151,12 +157,26 @@ impl<'a> GesturePointingProcessor<'a> {
         }));
         processor
     }
-    async fn on_pointing_event(&mut self, event: PointingEvent) {
+    async fn on_pointing_event(&mut self, mut event: PointingEvent) {
         if event.device_id != self.config.device_id {
             self.inner
                 .process(PointingProcessorProcessorEventEnum::Pointing(event))
                 .await;
             return;
+        }
+        let coropit = self.keymap.layout_option() & COROPIT_OPTION != 0;
+        if coropit != self.coropit {
+            self.coropit = coropit;
+            self.gesture = Gesture::default();
+            self.inner.reset_motion();
+            self.scroll.reset_motion();
+        }
+        if coropit {
+            for axis in &mut event.axes {
+                if matches!(axis.axis, Axis::X | Axis::Y) {
+                    axis.value = axis.value.saturating_neg();
+                }
+            }
         }
         let trigger = self.trigger.get();
         let epoch = (trigger.scroll_epoch, trigger.epoch);

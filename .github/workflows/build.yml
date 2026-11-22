@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
   pull_request:
   push:
-    branches: [feat/drag-lock-mb12-stock]
+    branches: [feat/trackball-unified]
     paths-ignore: ['firmware/**']
 
 jobs:
@@ -87,6 +87,9 @@ jobs:
           check_id=$(cat /tmp/check-id)
           gh api --method PATCH "repos/$GITHUB_REPOSITORY/check-runs/$check_id" --input /tmp/compiler-diagnostics.json > /dev/null
 
+      - name: Validate both UF2 images and settings boundary
+        run: python3 scripts/verify_uf2.py roBa_RMK_GT_UnifiedTest
+
       - name: Check dependency lockfile was preserved
         run: git diff --exit-code -- Cargo.lock
 
@@ -98,12 +101,12 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           archive: false
-          path: roBa_RMK_GT_Drag12Test-central.uf2
+          path: roBa_RMK_GT_UnifiedTest-central.uf2
 
       - name: Upload artifact (peripheral)
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           archive: false
-          path: roBa_RMK_GT_Drag12Test-peripheral.uf2
+          path: roBa_RMK_GT_UnifiedTest-peripheral.uf2
 
 

@@ -572,7 +572,8 @@ impl<'a> KeyMap<'a> {
         self.inner.borrow_mut().set_default_layer(layer_num);
     }
 
-    pub(crate) fn layout_option(&self) -> u32 {
+    /// Current VIA/Vial layout options, including live host edits.
+    pub fn layout_option(&self) -> u32 {
         self.inner.borrow().layout_option
     }
 

@@ -16,7 +16,7 @@ class EncoderBackportTests(unittest.TestCase):
             data = (ROOT / 'vendor/rmk' / name).read_bytes()
             if hashlib.sha256(data).hexdigest() != digest:
                 modified.append(name)
-        self.assertCountEqual(modified, ['Cargo.toml', 'src/input_device/rotary_encoder.rs', 'src/keyboard.rs', 'src/keyboard/mouse.rs', 'src/keyboard/fork.rs', 'src/keymap.rs', 'src/host/via/vial.rs', 'src/host/via/mod.rs', 'src/storage/mod.rs', 'src/state.rs', 'src/channel.rs'])
+        self.assertCountEqual(modified, ['Cargo.toml', 'src/input_device/rotary_encoder.rs', 'src/input_device/pointing.rs', 'src/keyboard.rs', 'src/keyboard/mouse.rs', 'src/keyboard/fork.rs', 'src/keymap.rs', 'src/host/via/vial.rs', 'src/host/via/mod.rs', 'src/storage/mod.rs', 'src/state.rs', 'src/channel.rs'])
 
     def test_firmware_and_host_resolve_the_same_backport(self):
         for manifest, expected in [('Cargo.toml', 'vendor/rmk'), ('tests/gesture-host/Cargo.toml', '../../vendor/rmk')]:

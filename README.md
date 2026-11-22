@@ -1,5 +1,10 @@
 # roBa-rmk
 
+## トラックボール共通ファーム試験版
+
+純正／COROPITをVial・Pipetteから選択できます。[書き込みと設定手順](docs/trackball-unified.md)を参照してください。
+
+
 [roBa](https://github.com/kumamuk-git/roBa)キーボードの[RMK](https://rmk.rs)ファームウェアです。
 
 > [!WARNING]

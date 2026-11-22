@@ -42,6 +42,7 @@ class ConfigurationTests(unittest.TestCase):
         old = json.loads(original("vial.json"))
         new = json.loads((ROOT / "vial.json").read_text())
         self.assertEqual([x["name"] for x in new["customKeycodes"][9:]], ["CLR_PEER", "GT1", "GT2", "GT3", "ST", "DD1+", "DD1-", "DD2+", "DD2-"])
+        self.assertEqual(new["layouts"]["labels"], [["Trackball", "Stock", "COROPIT"]])
         self.assertEqual(new["matrix"], {"rows": 5, "cols": 11})
         self.assertEqual(new["customKeycodes"][:9], old["customKeycodes"])
         self.assertEqual(new["layouts"]["keymap"][:-3], old["layouts"]["keymap"])

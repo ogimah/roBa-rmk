@@ -1,5 +1,11 @@
 # RMK 0.9.0 encoder backport
 
+Unified trackball trial: `KeyMap::layout_option()` is public so the common
+router can read live host options. `PointingProcessor::reset_motion()` clears
+fractional motion without changing the active mode. Storage changes are tests
+only; existing layout-option persistence is reused with no schema changes.
+See `../docs/trackball-unified.md` for the scoped firmware behavior.
+
 `rmk/` is the RMK library from stable commit
 `986017d901c7609a9a79167686524f014effa68a`, with upstream
 [PR #1277](https://github.com/rmk-rs/rmk/pull/1277) applied to

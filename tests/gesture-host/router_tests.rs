@@ -48,6 +48,12 @@ impl<'a> VialClient<'a> {
         packet[..6].copy_from_slice(&[0x05, layer, row, col, (code >> 8) as u8, code as u8]);
         self.packet(packet).await;
     }
+    async fn set_trackball(&self, options: u32) {
+        let mut packet = [0; 32];
+        packet[..2].copy_from_slice(&[0x03, 0x02]);
+        packet[2..6].copy_from_slice(&options.to_be_bytes());
+        self.packet(packet).await;
+    }
     async fn write_macro_buffer(&self, offset: u16, bytes: &[u8]) {
         assert!(bytes.len() <= 28);
         let mut packet = [0; 32];
@@ -111,6 +117,170 @@ fn reports() -> (Vec<(u8, [u8; 6])>, Vec<(i8, i8)>) {
 }
 fn key(k: HidKeyCode) -> KeyAction {
     KeyAction::Single(Action::Key(KeyCode::Hid(k)))
+}
+
+// These events are the already stock-oriented output of the PMW3610 driver.
+// This exercises the real Vial SET packet and real report/virtual-key paths.
+#[test]
+fn trackball_option_routes_cursor_scroll_and_all_twelve_gestures() {
+    embassy_time::MockDriver::get().reset();
+    rmk::state::set_usb_state(UsbState::Configured);
+    reports();
+    let mut keys = [[[KeyAction::No; 11]; 5]; 8];
+    let directions = [HidKeyCode::A, HidKeyCode::B, HidKeyCode::C, HidKeyCode::D];
+    for positions in crate::gesture::OUTPUT_POSITIONS {
+        for (i, (row, col)) in positions.into_iter().enumerate() {
+            keys[0][row as usize][col as usize] = key(directions[i]);
+        }
+    }
+    let mut data = KeymapData::new(keys);
+    let mut behavior = BehaviorConfig::default();
+    let positional = PositionalConfig::default();
+    let map = finish(KeyMap::new(&mut data, &mut behavior, &positional));
+    let client = VialClient::new(&map);
+    let mut keyboard = Keyboard::new(&map);
+    let trigger = Cell::new(Trigger::default());
+    let config = PointingProcessorConfig { device_id: 0, ..Default::default() };
+    let mut router = GesturePointingProcessor::new(
+        PointingProcessor::new(&map, config.clone()), config, &map, &trigger,
+    );
+    // Switch both ways without reboot. Unrelated future option bits must not rotate.
+    for option in [0, 1, 0, 0x80, 0x81] {
+        finish(client.set_trackball(option));
+        assert_eq!(map.layout_option(), option);
+        let sign = if option & 1 == 0 { 1 } else { -1 };
+        trigger.set(Trigger::default());
+        finish(router.on_pointing_event(motion(9, -11)));
+        assert_eq!(reports().1, vec![(9 * sign, -11 * sign)]);
+        let mut st = Trigger::default();
+        st.set_scroll(true);
+        trigger.set(st);
+        finish(router.on_pointing_event(motion(0, 8)));
+        let mut wheel = vec![];
+        while let Ok(report) = USB_REPORT_CHANNEL.try_receive() {
+            if let Report::MouseReport(r) = report {
+                assert_eq!((r.x, r.y, r.pan), (0, 0, 0));
+                wheel.push(r.wheel);
+            }
+        }
+        assert_eq!(wheel, vec![-sign]);
+        for bank in 0..3 {
+            let mut gt = Trigger::default();
+            gt.set_mask(1 << bank);
+            trigger.set(gt);
+            for (x, y, direction) in [(-31, 0, 0), (31, 0, 1), (0, -31, 2), (0, 31, 3)] {
+                embassy_time::MockDriver::get().advance(embassy_time::Duration::from_millis(150));
+                finish(router.on_pointing_event(motion(x, y)));
+                pump(&mut keyboard);
+                let (keys, mouse) = reports();
+                assert!(mouse.is_empty(), "gesture motion must not leak");
+                let expected = directions[if sign == 1 { direction } else { direction ^ 1 }];
+                assert_eq!(keys.iter().filter(|(_, k)| k.contains(&(expected as u8))).count(), 1);
+                assert_eq!(keys.last(), Some(&(0, [0; 6])));
+            }
+        }
+    }
+    // Startup uses restored options even before the first live SET.
+    let cfg = PointingProcessorConfig { device_id: 0, ..Default::default() };
+    let trigger = Cell::new(Trigger::default());
+    let mut fresh = GesturePointingProcessor::new(PointingProcessor::new(&map, cfg.clone()), cfg, &map, &trigger);
+    finish(fresh.on_pointing_event(motion(2, -3)));
+    assert_eq!(reports().1, vec![(-2, 3)]);
+}
+
+#[test]
+fn trackball_change_discards_old_stroke_and_fractional_scroll() {
+    embassy_time::MockDriver::get().reset();
+    rmk::state::set_usb_state(UsbState::Configured);
+    reports();
+    let mut data = KeymapData::new([[[KeyAction::No; 11]; 5]; 8]);
+    let mut behavior = BehaviorConfig::default();
+    let positional = PositionalConfig::default();
+    let map = finish(KeyMap::new(&mut data, &mut behavior, &positional));
+    let client = VialClient::new(&map);
+    let cfg = PointingProcessorConfig { device_id: 0, ..Default::default() };
+    let mut gt = Trigger::default();
+    gt.set_mask(1);
+    let trigger = Cell::new(gt);
+    let mut router = GesturePointingProcessor::new(PointingProcessor::new(&map, cfg.clone()), cfg, &map, &trigger);
+    finish(router.on_pointing_event(motion(25, 0)));
+    finish(client.set_trackball(1));
+    finish(router.on_pointing_event(motion(-7, 0)));
+    assert_eq!((router.gesture.motion(0, gt, 0, 0, 0), reports()), (Route::Captured(None), (vec![], vec![])));
+    // Check the actual accumulator, not only the absence of HID before key pumping.
+    assert_eq!(router.gesture.motion(0, gt, 24, 0, 150), Route::Captured(Some(crate::gesture::Direction::Right)));
+    let mut st = Trigger::default();
+    st.set_scroll(true);
+    trigger.set(st);
+    finish(client.set_trackball(0));
+    finish(router.on_pointing_event(motion(0, 7)));
+    assert!(reports().1.is_empty());
+    finish(client.set_trackball(1));
+    finish(router.on_pointing_event(motion(0, -1)));
+    assert!(reports().1.is_empty(), "old 7 counts must not combine with new orientation");
+    finish(router.on_pointing_event(motion(0, -7)));
+    let report = USB_REPORT_CHANNEL.try_receive().unwrap();
+    let Report::MouseReport(report) = report else { panic!("expected wheel report") };
+    assert_eq!((report.x, report.y, report.wheel, report.pan), (0, 0, -1, 0));
+    // The underlying RMK mode must survive a switch too, not become cursor.
+    trigger.set(Trigger::default());
+    finish(router.on_pointing_processor_event(PointingProcessorEvent {
+        device_id: 0,
+        mode: PointingMode::Scroll(ScrollConfig::default()),
+    }));
+    finish(client.set_trackball(0));
+    finish(router.on_pointing_event(motion(0, 7)));
+    assert!(reports().1.is_empty());
+    finish(client.set_trackball(1));
+    finish(router.on_pointing_event(motion(0, -1)));
+    assert!(reports().1.is_empty());
+    finish(router.on_pointing_event(motion(0, -7)));
+    let Report::MouseReport(report) = USB_REPORT_CHANNEL.try_receive().unwrap() else { panic!("expected wheel") };
+    assert_eq!((report.x, report.y, report.wheel), (0, 0, -1));
+}
+
+#[test]
+fn trackball_switch_preserves_both_drag_latches_and_filters_other_devices() {
+    embassy_time::MockDriver::get().reset();
+    rmk::state::set_usb_state(UsbState::Configured);
+    reports();
+    let mut keys = [[[KeyAction::No; 11]; 5]; 8];
+    for (col, id) in [14, 16, 15, 17].into_iter().enumerate() {
+        keys[0][0][col] = KeyAction::Single(Action::User(id));
+    }
+    let mut data = KeymapData::new(keys);
+    let mut behavior = BehaviorConfig::default();
+    let positional = PositionalConfig::default();
+    let map = finish(KeyMap::new(&mut data, &mut behavior, &positional));
+    let client = VialClient::new(&map);
+    let mut keyboard = Keyboard::new(&map);
+    let trigger = Cell::new(Trigger::default());
+    let cfg = PointingProcessorConfig { device_id: 0, ..Default::default() };
+    let mut router = GesturePointingProcessor::new(PointingProcessor::new(&map, cfg.clone()), cfg, &map, &trigger);
+    for col in [0, 1] {
+        finish(keyboard.process_inner(KeyboardEvent::key(0, col, true)));
+        finish(keyboard.process_inner(KeyboardEvent::key(0, col, false)));
+    }
+    reports();
+    for option in [0, 1, 0] {
+        finish(client.set_trackball(option));
+        finish(router.on_pointing_event(motion(3, -4)));
+        let Report::MouseReport(r) = USB_REPORT_CHANNEL.try_receive().unwrap() else { panic!("expected mouse") };
+        let sign = if option == 0 { 1 } else { -1 };
+        assert_eq!((r.buttons, r.x, r.y), (3, 3 * sign, -4 * sign));
+        let mut other = motion(5, 6);
+        other.device_id = 1;
+        finish(router.on_pointing_event(other));
+        assert!(USB_REPORT_CHANNEL.try_receive().is_err());
+    }
+    for col in [2, 3] {
+        finish(keyboard.process_inner(KeyboardEvent::key(0, col, true)));
+        finish(keyboard.process_inner(KeyboardEvent::key(0, col, false)));
+    }
+    reports();
+    finish(router.on_pointing_event(motion(1, 0)));
+    let Report::MouseReport(r) = USB_REPORT_CHANNEL.try_receive().unwrap() else { panic!("expected mouse") };
+    assert_eq!(r.buttons, 0);
 }
 
 #[test]

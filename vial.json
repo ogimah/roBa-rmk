@@ -82,6 +82,7 @@
         {"name":"DD2-","title":"Release DD right mouse button latch","shortName":"DD2-"}
     ],
     "layouts": {
+        "labels": [["Trackball", "Stock", "COROPIT"]],
         "keymap": [
             [{"x":     2             }, "0,2",  {"x":  8}, "0,8"],
             [{"x":     3, "y": -0.868}, "0,3",  {"x":  6}, "0,7"],

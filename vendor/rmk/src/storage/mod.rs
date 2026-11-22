@@ -1147,6 +1147,53 @@ mod tests {
         });
     }
 
+    #[cfg(feature = "vial")]
+    #[test]
+    fn trackball_layout_option_flash_task_reboot_preserves_keymap() {
+        use crate::config::PositionalConfig;
+        use crate::core_traits::Runnable;
+        use crate::host::context::KeyboardContext;
+        use crate::keymap::{KeyMap, KeymapData};
+        // Exercise real writes for COROPIT, then Stock, re-creating the runtime
+        // state each time rather than reading an in-memory value back.
+        block_on(async {
+            FLASH_CHANNEL.clear();
+            FLASH_OPERATION_FINISHED.reset();
+            type Flash = TestFlash<65536, 4096, 4>;
+            let initial = [[[KeyAction::Single(rmk_types::action::Action::User(14))]]];
+            let encoders: Option<&mut [[EncoderAction; 0]; 1]> = None;
+            let config = RuntimeStorageConfig { num_sectors: 8, ..Default::default() };
+            let positional = PositionalConfig::<1, 1>::default();
+            let mut flash = Flash::new();
+            for option in [1, 0] {
+                let mut storage = Storage::<Flash, 1, 1, 1, 0>::new(
+                    flash, &initial, &encoders, &config, &RuntimeBehaviorConfig::default(),
+                ).await;
+                let mut data = KeymapData::new(initial);
+                let mut behavior = RuntimeBehaviorConfig::default();
+                let keymap = KeyMap::new_from_storage(
+                    &mut data, Some(&mut storage), &mut behavior, &positional,
+                ).await;
+                KeyboardContext::new(&keymap).set_layout_options(option).await;
+                FLASH_OPERATION_FINISHED.reset();
+                let done = embassy_futures::select::select(storage.run(), FLASH_OPERATION_FINISHED.wait()).await;
+                assert!(matches!(done, embassy_futures::select::Either::Second(true)));
+                let (saved_flash, _) = storage.flash.destroy();
+                let mut rebooted = Storage::<Flash, 1, 1, 1, 0>::new(
+                    saved_flash, &initial, &encoders, &config, &RuntimeBehaviorConfig::default(),
+                ).await;
+                let mut fresh_data = KeymapData::new([[[KeyAction::No]]]);
+                let mut fresh_behavior = RuntimeBehaviorConfig::default();
+                let fresh = KeyMap::new_from_storage(
+                    &mut fresh_data, Some(&mut rebooted), &mut fresh_behavior, &positional,
+                ).await;
+                assert_eq!(fresh.layout_option(), option);
+                assert_eq!(fresh.get_action_at(crate::event::KeyboardEvent::key(0, 0, true).pos, 0), initial[0][0][0]);
+                (flash, _) = rebooted.flash.destroy();
+            }
+        });
+    }
+
     #[cfg(feature="vial")]
     #[test]
     fn vial_override_flash_task_reboot_and_readback() {
