@@ -3,8 +3,16 @@
 Unified trackball trial: `KeyMap::layout_option()` is public so the common
 router can read live host options. `PointingProcessor::reset_motion()` clears
 fractional motion without changing the active mode. Storage changes are tests
-only; existing layout-option persistence is reused with no schema changes.
+only in that trial; existing layout-option persistence is reused.
 See `../docs/trackball-unified.md` for the scoped firmware behavior.
+
+Bluetooth name trial adds `ble_name.rs`, User18/BN_APPLY, and an appended
+storage key/value. `ble/mod.rs` reads the owned saved name before building
+both GAP and advertising; the USB config and identity/bond machinery are
+unchanged. `storage/mod.rs` validates the reviewed personal layout schema
+before migrating an old build hash, instead of erasing that compatible bank.
+Normal macro buffers retain their semantics and are never modified by BN.
+See `../docs/ble-name.md` and the real-flash migration/keyboard tests.
 
 `rmk/` is the RMK library from stable commit
 `986017d901c7609a9a79167686524f014effa68a`, with upstream

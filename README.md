@@ -1,8 +1,9 @@
 # roBa-rmk
 
-## トラックボール共通ファーム試験版
+## Bluetooth名変更・トラボ共通ファーム試験版
 
-純正／COROPITをVial・Pipetteから選択できます。[書き込みと設定手順](docs/trackball-unified.md)を参照してください。
+Vial・Pipetteのマクロ欄とBNキーでBluetooth名を変更できます。[書き込みと名前変更の手順](docs/ble-name.md)を参照してください。
+純正／COROPITの選択とGT・ST・DD・Override・ホイール対策を維持しています。
 
 
 [roBa](https://github.com/kumamuk-git/roBa)キーボードの[RMK](https://rmk.rs)ファームウェアです。

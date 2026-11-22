@@ -44,6 +44,25 @@ static CONNECTION_TYPE_RESPONSE: Signal<crate::RawMutex, Option<ConnectionType>>
 static ACTIVE_BLE_PROFILE_RESPONSE: Signal<crate::RawMutex, Option<u8>> = Signal::new();
 
 #[cfg(feature = "_ble")]
+static BLE_NAME_RESPONSE: Signal<crate::RawMutex, Option<crate::ble_name::BleName>> = Signal::new();
+#[cfg(feature = "_ble")]
+static BLE_NAME_SAVED: Signal<crate::RawMutex, bool> = Signal::new();
+
+#[cfg(feature = "_ble")]
+pub(crate) async fn read_ble_name() -> Option<crate::ble_name::BleName> {
+    request_read(FlashOperationMessage::ReadBleName, &BLE_NAME_RESPONSE).await
+}
+
+#[cfg(feature = "_ble")]
+pub(crate) async fn save_ble_name(name: crate::ble_name::BleName) -> bool {
+    // A separate completion signal prevents a bond/layout write from being
+    // mistaken for completion of this particular request.
+    BLE_NAME_SAVED.reset();
+    FLASH_CHANNEL.send(FlashOperationMessage::BleName(name)).await;
+    BLE_NAME_SAVED.wait().await
+}
+
+#[cfg(feature = "_ble")]
 async fn request_read<T: Send>(msg: FlashOperationMessage, response: &Signal<crate::RawMutex, T>) -> T {
     response.reset();
     FLASH_CHANNEL.send(msg).await;
@@ -88,6 +107,10 @@ pub(crate) async fn write_peer_address(addr: PeerAddress) -> bool {
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub(crate) enum FlashOperationMessage {
+    #[cfg(feature = "_ble")]
+    ReadBleName,
+    #[cfg(feature = "_ble")]
+    BleName(crate::ble_name::BleName),
     #[cfg(feature = "_ble")]
     // BLE profile info to be saved
     ProfileInfo(ProfileInfo),
@@ -202,6 +225,9 @@ pub(crate) enum StorageKey {
     ActiveBleProfile,
     #[cfg(feature = "_ble")]
     BondInfo(u8),
+    // Append only: existing postcard storage keys must not be renumbered.
+    #[cfg(feature = "_ble")]
+    BleName,
 }
 
 impl StorageKey {
@@ -283,6 +309,9 @@ pub(crate) enum StorageData {
     BondInfo(ProfileInfo),
     #[cfg(feature = "_ble")]
     ActiveBleProfile(u8),
+    // Append only: preserve the persisted discriminants of all old records.
+    #[cfg(feature = "_ble")]
+    BleName(crate::ble_name::BleName),
 }
 
 impl<'a> PostcardValue<'a> for StorageData {}
@@ -646,11 +675,69 @@ impl<F: AsyncNorFlash, const ROW: usize, const COL: usize, const NUM_LAYER: usiz
     async fn check_enable(&mut self) -> bool {
         if let Some(StorageData::StorageConfig(config)) = self.fetch_data(StorageKey::StorageConfig).await
             && config.enable
-            && config.build_hash == BUILD_HASH
         {
-            return true;
+            if config.build_hash == BUILD_HASH { return true; }
+            #[cfg(all(feature = "_ble", feature = "host"))]
+            if self.compatible_name_upgrade().await {
+                // Same reviewed 0.9 schema: keep every record, including bonds.
+                // If the metadata write fails, retry validation next boot; do
+                // not erase a valid settings bank due to a failed migration.
+                let _ = self.store_data(StorageKey::StorageConfig,
+                    &StorageData::StorageConfig(LocalStorageConfig { enable: true, build_hash: BUILD_HASH })).await;
+                return true;
+            }
         }
         false
+    }
+
+    #[cfg(all(feature = "_ble", feature = "host"))]
+    async fn valid_name_upgrade_item(&mut self, key: StorageKey, required: bool, accepts: fn(&StorageData) -> bool) -> bool {
+        match self.flash.fetch_item(&mut self.buffer, &key).await {
+            Ok(Some(item)) => accepts(&item),
+            Ok(None) => !required,
+            Err(_) => false,
+        }
+    }
+
+    #[cfg(all(feature = "_ble", feature = "host"))]
+    async fn compatible_name_upgrade(&mut self) -> bool {
+        // Deliberately scoped to the known personal firmware family. This is
+        // not a general "ignore BUILD_HASH" switch for unrelated keyboards.
+        if (ROW, COL, NUM_LAYER, NUM_ENCODER, MACRO_SPACE_SIZE) != (5, 11, 8, 1, 512)
+            || (crate::COMBO_MAX_NUM, crate::FORK_MAX_NUM, crate::MORSE_MAX_NUM) != (8, 32, 32)
+        { return false; }
+        macro_rules! check {
+            ($key:expr, $required:expr, $accepts:expr) => {
+                if !self.valid_name_upgrade_item($key, $required, $accepts).await { return false; }
+            }
+        }
+        check!(StorageKey::LayoutConfig, true, |v| matches!(v, StorageData::LayoutConfig(c) if c.default_layer < 8));
+        check!(StorageKey::BehaviorConfig, true, |v| matches!(v, StorageData::BehaviorConfig(_)));
+        check!(StorageKey::MacroData, false, |v| matches!(v, StorageData::MacroData(_)));
+        for layer in 0..NUM_LAYER {
+            for row in 0..ROW {
+                for col in 0..COL {
+                    check!(StorageKey::keymap(layer as u8, row as u8, col as u8), true, |v| matches!(v, StorageData::KeyAction(_)));
+                }
+            }
+            check!(StorageKey::encoder(0, layer as u8), true, |v| matches!(v, StorageData::EncoderAction(_)));
+        }
+        for idx in 0..32 {
+            check!(StorageKey::Fork(idx), false, |v| matches!(v, StorageData::Fork(_)));
+            check!(StorageKey::Morse(idx), false, |v| matches!(v, StorageData::Morse(_)));
+            if idx < 8 { check!(StorageKey::Combo(idx), false, |v| matches!(v, StorageData::Combo(_))); }
+        }
+        for slot in 0..crate::NUM_BLE_PROFILE {
+            check!(StorageKey::BondInfo(slot as u8), false, |v| matches!(v, StorageData::BondInfo(_)));
+        }
+        #[cfg(feature = "split")]
+        for peer in 0..crate::SPLIT_PERIPHERALS_NUM {
+            check!(StorageKey::PeerAddress(peer as u8), false, |v| matches!(v, StorageData::PeerAddress(_)));
+        }
+        check!(StorageKey::ActiveBleProfile, false, |v| matches!(v, StorageData::ActiveBleProfile(_)));
+        check!(StorageKey::ConnectionType, false, |v| matches!(v, StorageData::ConnectionType(_)));
+        check!(StorageKey::BleName, false, |v| matches!(v, StorageData::BleName(n) if n.as_str().is_some()));
+        true
     }
 }
 
@@ -663,6 +750,22 @@ impl<F: AsyncNorFlash, const ROW: usize, const COL: usize, const NUM_LAYER: usiz
             debug!("Flash operation: {:?}", info);
 
             let write_result: Result<(), SSError<F::Error>> = match info {
+                #[cfg(feature = "_ble")]
+                FlashOperationMessage::ReadBleName => {
+                    let name = match self.fetch_data(StorageKey::BleName).await {
+                        Some(StorageData::BleName(name)) if name.as_str().is_some() => Some(name),
+                        _ => None,
+                    };
+                    BLE_NAME_RESPONSE.signal(name);
+                    continue;
+                }
+                #[cfg(feature = "_ble")]
+                FlashOperationMessage::BleName(name) => {
+                    let ok = name.as_str().is_some()
+                        && self.store_data(StorageKey::BleName, &StorageData::BleName(name)).await.is_ok();
+                    BLE_NAME_SAVED.signal(ok);
+                    continue;
+                }
                 #[cfg(feature = "_ble")]
                 FlashOperationMessage::ReadBleBondInfo(slot_num) => {
                     let resp = match self.fetch_data(StorageKey::bond_info(slot_num)).await {
@@ -870,6 +973,8 @@ const fn get_buffer_size() -> usize {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(all(feature = "_ble", feature = "vial", feature = "split"))]
+    include!("ble_name_tests.rs");
     use sequential_storage::cache::Cache;
     use sequential_storage::map::{MapConfig, MapStorage};
 
@@ -888,11 +993,12 @@ mod tests {
 
     struct TestFlash<const SIZE: usize, const ERASE_SIZE: usize, const WRITE_SIZE: usize> {
         bytes: [u8; SIZE],
+        fail_writes: bool,
     }
 
     impl<const SIZE: usize, const ERASE_SIZE: usize, const WRITE_SIZE: usize> TestFlash<SIZE, ERASE_SIZE, WRITE_SIZE> {
         fn new() -> Self {
-            Self { bytes: [0xFF; SIZE] }
+            Self { bytes: [0xFF; SIZE], fail_writes: false }
         }
     }
 
@@ -931,6 +1037,7 @@ mod tests {
         }
 
         fn write(&mut self, offset: u32, bytes: &[u8]) -> Result<(), Self::Error> {
+            if self.fail_writes { return Err(TestFlashError); }
             let start = offset as usize;
             let end = start + bytes.len();
             for (dst, src) in self.bytes[start..end].iter_mut().zip(bytes.iter()) {

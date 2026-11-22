@@ -1902,6 +1902,26 @@ impl<'a> Keyboard<'a> {
     }
 
     async fn process_user(&mut self, id: u8, event: KeyboardEvent) {
+        #[cfg(all(feature = "_ble", feature = "storage"))]
+        if id == crate::ble_name::APPLY_USER {
+            if event.pressed {
+                if !crate::ble_name::macro_ready() {
+                    warn!("BLE name: finish saving macros and wait one second before applying");
+                } else {
+                    match crate::ble_name::from_macro_buffer(&self.keymap.get_macro_sequences()) {
+                        Ok(name) => {
+                            if crate::storage::save_ble_name(name).await {
+                                info!("BLE name saved; restart to apply");
+                            } else {
+                                warn!("BLE name save failed; previous saved name remains authoritative");
+                            }
+                        }
+                        Err(_) => warn!("BLE name rejected: require one ASCII Text macro, 1..16 bytes"),
+                    }
+                }
+            }
+            return;
+        }
         // User0..9 are BLE/split actions; User10..13 are GT1..3/ST.
         // DD taps act on press only: key release does not end a drag.
         if (14..=17).contains(&id) {

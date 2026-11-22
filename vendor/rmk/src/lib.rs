@@ -81,6 +81,8 @@ use crate::config::PositionalConfig;
 
 #[cfg(feature = "_ble")]
 pub mod ble;
+#[cfg(all(feature = "_ble", feature = "storage"))]
+mod ble_name;
 pub mod boot;
 pub mod channel;
 pub mod config;

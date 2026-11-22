@@ -215,6 +215,14 @@ async fn run_ble_keyboard<
     config: &BleBatteryConfig<'static>,
     #[cfg(feature = "host")] host_service: Option<&'r crate::host::HostService<'r>>,
 ) -> ! {
+    // This owned buffer outlives the GATT server and every advertising session.
+    // Never change the BLE address, IRK, bond records, or USB DeviceConfig.
+    #[cfg(feature = "storage")]
+    let saved_name = crate::storage::read_ble_name().await;
+    #[cfg(feature = "storage")]
+    let product_name = saved_name.as_ref().and_then(crate::ble_name::BleName::as_str)
+        .unwrap_or(device_config.product_name);
+    #[cfg(not(feature = "storage"))]
     let product_name = device_config.product_name;
     #[cfg(feature = "_nrf_ble")]
     let serial_number = crate::ble::nrf::get_serial_number();
