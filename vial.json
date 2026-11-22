@@ -80,7 +80,7 @@
         {"name":"DD1-","title":"Release DD left mouse button latch","shortName":"DD1-"},
         {"name":"DD2+","title":"Hold right mouse button until DD2-","shortName":"DD2+"},
         {"name":"DD2-","title":"Release DD right mouse button latch","shortName":"DD2-"},
-        {"name": "BN_APPLY", "shortName": "BN", "title": "Apply BLE_NAME Text macro; wait 2s after saving, then restart"}
+        {"name": "BN_APPLY", "shortName": "BN", "title": "Apply name= Text macro to USB and Bluetooth; wait 2s after saving, then restart"}
     ],
     "layouts": {
         "labels": [["Trackball", "Stock", "COROPIT"]],

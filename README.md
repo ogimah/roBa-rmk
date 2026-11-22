@@ -1,8 +1,8 @@
 # roBa-rmk
 
-## Bluetooth名変更・トラボ共通ファーム試験版
+## USB／Bluetooth名変更・トラボ共通ファーム試験版
 
-Vial・Pipetteのマクロ欄とBNキーでBluetooth名を変更できます。[書き込みと名前変更の手順](docs/ble-name.md)を参照してください。
+Vial・Pipetteのマクロ欄とBNキーでUSB／Bluetooth名をまとめて変更できます。[書き込みと名前変更の手順](docs/ble-name.md)を参照してください。
 純正／COROPITの選択とGT・ST・DD・Override・ホイール対策を維持しています。
 
 

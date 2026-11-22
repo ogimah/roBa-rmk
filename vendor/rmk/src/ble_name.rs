@@ -1,9 +1,9 @@
 //! A standard Vial Text macro transports a name; only User18 applies it.
-//! Kept separate from macro execution and from USB/device identity.
+//! Kept separate from macro execution and from USB/Bluetooth identity (addresses and IDs).
 use core::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 
 pub(crate) const APPLY_USER: u8 = 18;
-const PREFIX: &[u8] = b"BLE_NAME=";
+const PREFIX: &[u8] = b"name=";
 const MAX_LEN: usize = 16; // Space remaining in the existing 31-byte advertisement.
 static MACRO_EDITED: AtomicBool = AtomicBool::new(false);
 static LAST_MACRO_EDIT: AtomicU32 = AtomicU32::new(0);
@@ -109,7 +109,7 @@ mod tests {
     fn name_text_preserves_ascii_case_punctuation_and_any_slot() {
         for slot in [0, 7, 31] {
             let mut frames = vec![&b"ordinary"[..]; 32];
-            frames[slot] = b"BLE_NAME=moNa2-COROPIT";
+            frames[slot] = b"name=moNa2-COROPIT";
             let b = buffer(&frames);
             assert_eq!(
                 from_macro_buffer(&b).unwrap().as_str(),
@@ -118,7 +118,7 @@ mod tests {
             assert_eq!(b, buffer(&frames), "parser must not modify macro data");
         }
         assert_eq!(
-            from_macro_buffer(&buffer(&[b"BLE_NAME=A_1-+ ()"]))
+            from_macro_buffer(&buffer(&[b"name=A_1-+ ()"]))
                 .unwrap()
                 .as_str(),
             Some("A_1-+ ()")
@@ -127,29 +127,35 @@ mod tests {
     #[test]
     fn name_parser_rejects_ambiguous_mixed_and_non_ascii_data() {
         for text in [
-            &b"BLE_NAME="[..],
-            b"BLE_NAME=                 ",
-            b"BLE_NAME=12345678901234567",
-            b"BLE_NAME=x\x01\x01A",
-            "BLE_NAME=モナ".as_bytes(),
-            b"BLE_NAME=x\n",
+            &b"name="[..],
+            b"name=                 ",
+            b"name=12345678901234567",
+            b"name=x\x01\x01A",
+            "name=モナ".as_bytes(),
+            b"name=x\n",
         ] {
             assert_eq!(from_macro_buffer(&buffer(&[text])), Err(NameError::Invalid));
         }
         assert_eq!(
-            from_macro_buffer(&buffer(&[b"BLE_NAME=A", b"BLE_NAME=B"])),
+            from_macro_buffer(&buffer(&[b"name=A", b"name=B"])),
             Err(NameError::Duplicate)
         );
         assert_eq!(
-            from_macro_buffer(&buffer(&[b"text BLE_NAME=A", b"\x01\x01A"])),
+            from_macro_buffer(&buffer(&[b"text name=A", b"\x01\x01A"])),
             Err(NameError::Missing)
         );
+        for old_or_wrong_case in [&b"BLE_NAME=Old"[..], b"NAME=Upper", b"Name=Mixed"] {
+            assert_eq!(
+                from_macro_buffer(&buffer(&[old_or_wrong_case])),
+                Err(NameError::Missing)
+            );
+        }
         assert_eq!(
-            from_macro_buffer(b"BLE_NAME=unfinished"),
+            from_macro_buffer(b"name=unfinished"),
             Err(NameError::Truncated)
         );
         assert_eq!(
-            from_macro_buffer(&buffer(&[b"BLE_NAME=1234567890123456"]))
+            from_macro_buffer(&buffer(&[b"name=1234567890123456"]))
                 .unwrap()
                 .as_str()
                 .unwrap()

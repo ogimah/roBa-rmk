@@ -179,7 +179,7 @@ mod ble_name_tests {
                     keymap.action_at_pos(0, 0, 0),
                     KeyAction::Single(Action::User(18))
                 );
-                macros[7..7 + b"BLE_NAME=roBa_Name1".len()].copy_from_slice(b"BLE_NAME=roBa_Name1");
+                macros[7..7 + b"name=roBa_Name1".len()].copy_from_slice(b"name=roBa_Name1");
                 upload(&host, &macros).await;
                 embassy_time::Timer::after_millis(1100).await;
                 keyboard.process_inner(KeyboardEvent::key(0, 0, true)).await;
@@ -194,7 +194,7 @@ mod ble_name_tests {
                 );
                 // Invalid apply must not erase the saved value.
                 let mut invalid = [0; MACRO_SPACE_SIZE];
-                invalid[..9].copy_from_slice(b"BLE_NAME=");
+                invalid[..5].copy_from_slice(b"name=");
                 upload(&host, &invalid).await;
                 embassy_time::Timer::after_millis(1100).await;
                 keyboard.process_inner(KeyboardEvent::key(0, 0, true)).await;
@@ -237,6 +237,22 @@ mod ble_name_tests {
                     "name apply changed {key:?}"
                 );
             }
+            let usb_defaults = crate::config::DeviceConfig {
+                product_name: "compiled default",
+                serial_number: "stable-serial",
+                ..Default::default()
+            };
+            let usb = rebooted.usb_config_with_saved_name(usb_defaults).await;
+            assert_eq!(usb.product_name, "roBa_Name1");
+            assert_eq!(
+                (usb.vid, usb.pid, usb.manufacturer, usb.serial_number),
+                (
+                    usb_defaults.vid,
+                    usb_defaults.pid,
+                    usb_defaults.manufacturer,
+                    usb_defaults.serial_number
+                )
+            );
             let boot = async {
                 assert_eq!(read_ble_name().await.unwrap().as_str(), Some("roBa_Name1"));
             };
@@ -244,6 +260,63 @@ mod ble_name_tests {
                 embassy_futures::select::select(rebooted.run(), boot).await,
                 embassy_futures::select::Either::Second(())
             ));
+        });
+    }
+
+    #[test]
+    fn ble_name_usb_boot_preserves_old_saved_encoding_and_missing_name_defaults() {
+        block_on(async {
+            type Flash = TestFlash<65536, 4096, 4>;
+            let initial = [[[KeyAction::No]]];
+            let encoders: Option<&mut [[EncoderAction; 0]; 1]> = None;
+            let config = RuntimeStorageConfig {
+                num_sectors: 8,
+                ..Default::default()
+            };
+            let mut storage = Storage::<Flash, 1, 1, 1, 0>::new(
+                Flash::new(),
+                &initial,
+                &encoders,
+                &config,
+                &RuntimeBehaviorConfig::default(),
+            )
+            .await;
+            let default = crate::config::DeviceConfig {
+                product_name: "fixed",
+                serial_number: "serial-unchanged",
+                ..Default::default()
+            };
+            let fallback = storage.usb_config_with_saved_name(default).await;
+            assert_eq!(fallback.product_name, default.product_name);
+            // Exact previous name record: appended variant 13, [u8;16], len.
+            // Do not generate this through the new name= parser.
+            let mut legacy_wire = [0; 18];
+            legacy_wire[0] = 13;
+            legacy_wire[1..4].copy_from_slice(b"Old");
+            legacy_wire[17] = 3;
+            let legacy: StorageData = postcard::from_bytes(&legacy_wire).unwrap();
+            assert_eq!(bytes(&legacy), legacy_wire);
+            storage
+                .store_data(StorageKey::BleName, &legacy)
+                .await
+                .unwrap();
+            let mut old_macro = [0; 512];
+            old_macro[..12].copy_from_slice(b"BLE_NAME=Old");
+            assert_eq!(
+                crate::ble_name::from_macro_buffer(&old_macro),
+                Err(crate::ble_name::NameError::Missing)
+            );
+            let usb = storage.usb_config_with_saved_name(default).await;
+            assert_eq!(usb.product_name, "Old");
+            assert_eq!(
+                (usb.vid, usb.pid, usb.manufacturer, usb.serial_number),
+                (
+                    default.vid,
+                    default.pid,
+                    default.manufacturer,
+                    default.serial_number
+                )
+            );
         });
     }
 
@@ -301,7 +374,7 @@ mod ble_name_tests {
             .await;
             let old = crate::ble_name::from_macro_buffer(&{
                 let mut b = [0; 512];
-                b[..12].copy_from_slice(b"BLE_NAME=Old");
+                b[..8].copy_from_slice(b"name=Old");
                 b
             })
             .unwrap();
@@ -321,7 +394,7 @@ mod ble_name_tests {
             .await;
             let new = crate::ble_name::from_macro_buffer(&{
                 let mut b = [0; 512];
-                b[..12].copy_from_slice(b"BLE_NAME=New");
+                b[..8].copy_from_slice(b"name=New");
                 b
             })
             .unwrap();

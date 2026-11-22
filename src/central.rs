@@ -27,7 +27,10 @@ mod keyboard_central {
         // Preserve all generated devices and tasks. The original pointing
         // processor is owned by the wrapper and must not also run separately.
         let mut wpm_processor = rmk::processor::builtin::wpm::WpmProcessor::new();
-        let mut usb_transport = rmk::usb::UsbTransport::new(driver, rmk_config.device_config)
+        // Read before the USB builder captures its static product descriptor.
+        // The storage worker starts later in run_all; no request-channel wait here.
+        let usb_config = storage.usb_config_with_saved_name(rmk_config.device_config).await;
+        let mut usb_transport = rmk::usb::UsbTransport::new(driver, usb_config)
             .with_host_service(&host_service);
         // RMK 0.9 owns the BLE stack and split managers inside BleTransport.
         let mut ble_transport = rmk::ble::BleTransport::new(

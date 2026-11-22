@@ -690,6 +690,27 @@ impl<F: AsyncNorFlash, const ROW: usize, const COL: usize, const NUM_LAYER: usiz
         false
     }
 
+    /// Load the saved product name before constructing USB descriptors.
+    /// Call once during boot, before starting the flash worker/USB tasks.
+    /// The name buffer must live as long as embassy-usb's static descriptors.
+    #[cfg(feature = "_ble")]
+    pub async fn usb_config_with_saved_name(
+        &mut self,
+        default: crate::config::DeviceConfig<'static>,
+    ) -> crate::config::DeviceConfig<'static> {
+        static USB_NAME: static_cell::StaticCell<crate::ble_name::BleName> = static_cell::StaticCell::new();
+        match self.fetch_data(StorageKey::BleName).await {
+            Some(StorageData::BleName(name)) if name.as_str().is_some() => {
+                let name: &'static crate::ble_name::BleName = USB_NAME.init(name);
+                crate::config::DeviceConfig {
+                    product_name: name.as_str().unwrap_or(default.product_name),
+                    ..default
+                }
+            }
+            _ => default,
+        }
+    }
+
     #[cfg(all(feature = "_ble", feature = "host"))]
     async fn valid_name_upgrade_item(&mut self, key: StorageKey, required: bool, accepts: fn(&StorageData) -> bool) -> bool {
         match self.flash.fetch_item(&mut self.buffer, &key).await {

@@ -62,6 +62,7 @@ class ConfigurationTests(unittest.TestCase):
         self.assertIn("rmk::split::PeripheralMatrixConfig", source)
         self.assertIn("ble_controller", source)
         self.assertEqual(source.count(".with_host_service(&host_service)"), 2)
+        self.assertLess(source.index("storage.usb_config_with_saved_name"), source.index("UsbTransport::new(driver, usb_config)"))
         self.assertNotIn("scan_peripherals", source)
 
 

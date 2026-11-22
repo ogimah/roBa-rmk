@@ -1906,17 +1906,17 @@ impl<'a> Keyboard<'a> {
         if id == crate::ble_name::APPLY_USER {
             if event.pressed {
                 if !crate::ble_name::macro_ready() {
-                    warn!("BLE name: finish saving macros and wait one second before applying");
+                    warn!("Device name: finish saving macros and wait one second before applying");
                 } else {
                     match crate::ble_name::from_macro_buffer(&self.keymap.get_macro_sequences()) {
                         Ok(name) => {
                             if crate::storage::save_ble_name(name).await {
-                                info!("BLE name saved; restart to apply");
+                                info!("Device name saved; restart to apply");
                             } else {
-                                warn!("BLE name save failed; previous saved name remains authoritative");
+                                warn!("Device name save failed; previous saved name remains authoritative");
                             }
                         }
-                        Err(_) => warn!("BLE name rejected: require one ASCII Text macro, 1..16 bytes"),
+                        Err(_) => warn!("Device name rejected: require one ASCII Text macro, 1..16 bytes"),
                     }
                 }
             }

@@ -8,8 +8,9 @@ See `../docs/trackball-unified.md` for the scoped firmware behavior.
 
 Bluetooth name trial adds `ble_name.rs`, User18/BN_APPLY, and an appended
 storage key/value. `ble/mod.rs` reads the owned saved name before building
-both GAP and advertising; the USB config and identity/bond machinery are
-unchanged. `storage/mod.rs` validates the reviewed personal layout schema
+both GAP and advertising; the identity/bond machinery is unchanged. The current extension loads
+the same saved name before USB construction, keeping all USB identity fields
+except the product string unchanged. The Text prefix is now lowercase `name=`. `storage/mod.rs` validates the reviewed personal layout schema
 before migrating an old build hash, instead of erasing that compatible bank.
 Normal macro buffers retain their semantics and are never modified by BN.
 See `../docs/ble-name.md` and the real-flash migration/keyboard tests.
