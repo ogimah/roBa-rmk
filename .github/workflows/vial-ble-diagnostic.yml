@@ -79,3 +79,20 @@ jobs:
           path: Vial-0.7.5-BLE-Diagnostic-win.zip
           archive: false
           if-no-files-found: error
+      - name: Expose failure diagnostics through Checks API
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $details = ''
+          foreach ($logPath in @('vial/freeze.log', 'vial/target/Vial BLE Diagnostic/vial-ble-diagnostic.log')) {
+            if (Test-Path $logPath) {
+              $details += "`n$logPath`n" + (Get-Content $logPath -Raw)
+            }
+          }
+          if ($details.Length -gt 50000) { $details = $details.Substring($details.Length - 50000) }
+          $jobs = gh api "repos/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID/jobs" | ConvertFrom-Json
+          $checkId = ($jobs.jobs | Where-Object { $_.name -eq 'windows' } | Select-Object -First 1).id
+          $body = @{ output = @{ title = 'Vial diagnostic build output'; summary = 'Windows packaging or startup failed. See captured output.'; text = ('```text' + "`n" + $details + "`n" + '```') } }
+          $body | ConvertTo-Json -Depth 5 | Set-Content -Encoding utf8 "$env:RUNNER_TEMP/check-output.json"
+          gh api --method PATCH "repos/$env:GITHUB_REPOSITORY/check-runs/$checkId" --input "$env:RUNNER_TEMP/check-output.json" | Out-Null
