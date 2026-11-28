@@ -42,6 +42,9 @@ jobs:
         run: |
           Invoke-WebRequest -Uri 'https://download.microsoft.com/download/3/2/2/3224B87F-CFA0-4E70-BDA3-3DE650EFEBA5/vcredist_x64.exe' -OutFile "$env:RUNNER_TEMP/vcredist_x64.exe"
           Start-Process -FilePath "$env:RUNNER_TEMP/vcredist_x64.exe" -ArgumentList '/install','/quiet','/norestart' -Wait
+          Invoke-WebRequest -Uri 'https://download.microsoft.com/download/1/6/B/16B06F60-3B20-4FF2-B699-5E9B7962F9AE/VSU4/vcredist_x64.exe' -OutFile "$env:RUNNER_TEMP/vcredist2012_x64.exe"
+          $legacyInstall = Start-Process -FilePath "$env:RUNNER_TEMP/vcredist2012_x64.exe" -ArgumentList '/install','/quiet','/norestart' -Wait -PassThru
+          if ($legacyInstall.ExitCode -notin @(0, 3010, 1638)) { throw "VC++ 2012 install failed: $($legacyInstall.ExitCode)" }
       - name: Freeze portable diagnostic application
         working-directory: vial
         run: |

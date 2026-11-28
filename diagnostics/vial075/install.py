@@ -11,7 +11,7 @@ commands = [
     # Pure-Python Cython avoids compiling the compiler itself; generated
     # wrapper code and the pinned HIDAPI source remain unchanged.
     [sys.executable, "-m", "pip", "install", "--global-option=--no-cython-compile",
-     "git+https://github.com/cython/cython@20f478a778ba6c34ff8ccadb289bf01cfbe90b94#egg=Cython"],
+     "https://github.com/cython/cython/archive/20f478a778ba6c34ff8ccadb289bf01cfbe90b94.zip#egg=Cython"],
     [sys.executable, "-m", "pip", "install", "-r", "requirements.txt"],
     [sys.executable, "-m", "pip", "freeze"],
 ]
