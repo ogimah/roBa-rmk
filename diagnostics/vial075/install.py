@@ -4,8 +4,14 @@ import subprocess
 import sys
 
 commands = [
-    [sys.executable, "-m", "pip", "install", "pip==21.3.1", "setuptools==59.6.0",
-     "wheel==0.37.1", "Cython==0.29.37"],
+    [sys.executable, "-m", "pip", "install", "pip==21.3.1", "setuptools==57.5.0",
+     "wheel==0.37.1"],
+    # The exact alpha specified by vial-kb/cython-hidapi is no longer on
+    # PyPI. Build the same version from its official, pinned Git commit.
+    # Pure-Python Cython avoids compiling the compiler itself; generated
+    # wrapper code and the pinned HIDAPI source remain unchanged.
+    [sys.executable, "-m", "pip", "install", "--global-option=--no-cython-compile",
+     "git+https://github.com/cython/cython@20f478a778ba6c34ff8ccadb289bf01cfbe90b94#egg=Cython"],
     [sys.executable, "-m", "pip", "install", "-r", "requirements.txt"],
     [sys.executable, "-m", "pip", "freeze"],
 ]
