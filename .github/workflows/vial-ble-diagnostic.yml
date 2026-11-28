@@ -36,9 +36,8 @@ jobs:
       - name: Install official-version Python dependencies
         working-directory: vial
         run: |
-          python -m pip install pip==21.3.1 setuptools==59.6.0 wheel==0.37.1 Cython==0.29.37
-          python -m pip install -r requirements.txt
-          python -m pip freeze | Set-Content -Encoding utf8 diagnostic-dependencies.txt
+          python ../task-source/diagnostics/vial075/install.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Install Qt legacy runtime as in upstream Windows CI
         run: |
           Invoke-WebRequest -Uri 'https://download.microsoft.com/download/3/2/2/3224B87F-CFA0-4E70-BDA3-3DE650EFEBA5/vcredist_x64.exe' -OutFile "$env:RUNNER_TEMP/vcredist_x64.exe"
@@ -85,7 +84,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $details = ''
-          foreach ($logPath in @('vial/freeze.log', 'vial/target/Vial BLE Diagnostic/vial-ble-diagnostic.log')) {
+          foreach ($logPath in @('vial/dependency-install.log', 'vial/freeze.log', 'vial/target/Vial BLE Diagnostic/vial-ble-diagnostic.log')) {
             if (Test-Path $logPath) {
               $details += "`n$logPath`n" + (Get-Content $logPath -Raw)
             }
