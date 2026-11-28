@@ -26,6 +26,9 @@ def prepare(root):
                  "    for dev in enumerate_for_diagnostic(hid, quiet, via_stack_json, sideload_vid, sideload_pid):\n")
     replace_once(util, "    logging.getLogger().addHandler(handler)\n",
                  "    logging.getLogger().addHandler(handler)\n    enable_portable_log()\n")
+    replace_once(root / "src/main/python/main_window.py",
+                 '        self.settings = QSettings("Vial", "Vial")\n',
+                 '        self.settings = QSettings(os.path.join(QStandardPaths.writableLocation(QStandardPaths.AppLocalDataLocation), "diagnostic-settings.ini"), QSettings.IniFormat)\n')
     shutil.copyfile(Path(__file__).with_name("ble_diagnostic.py"),
                     root / "src/main/python/ble_diagnostic.py")
     print("Prepared Vial 0.7.5 logging-only diagnostic; original HID dependencies preserved.")

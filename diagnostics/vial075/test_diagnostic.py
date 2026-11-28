@@ -90,6 +90,9 @@ class DiagnosticTests(unittest.TestCase):
         self.assertEqual(config["version"], "0.7.5")
         requirement = (ROOT / "requirements.txt").read_text(encoding="utf-8")
         self.assertIn("88d8983b3dc65b9ef84238abe3f46004b0ef2fd0", requirement)
+        window = (ROOT / "src/main/python/main_window.py").read_text(encoding="utf-8")
+        self.assertIn('"diagnostic-settings.ini"), QSettings.IniFormat)', window)
+        self.assertNotIn('QSettings("Vial", "Vial")', window)
 
 
 if __name__ == "__main__":
