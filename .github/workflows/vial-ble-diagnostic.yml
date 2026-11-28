@@ -46,7 +46,7 @@ jobs:
       - name: Freeze portable diagnostic application
         working-directory: vial
         run: |
-          fbs freeze *>&1 | Tee-Object -FilePath freeze.log
+          python ../task-source/diagnostics/vial075/freeze.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Smoke-test frozen app on Windows
         working-directory: vial
