@@ -58,41 +58,47 @@ def detector(hid, diagnostic):
 
 
 class DiagnosticTests(unittest.TestCase):
-    def test_logging_does_not_change_detection_or_descriptors(self):
-        for serial in ("", "vial:f64c2b3c:123456", "other"):
-            for usage_page, usage in ((0xff60, 0x61), (1, 6)):
-                for name in ("roBa-rmk", "moNa2-A"):
-                    devices = [{"vendor_id": 0x4c4b, "product_id": 0x4643,
-                                "serial_number": serial, "product_string": name,
-                                "manufacturer_string": "RMK", "path": b"test-ble-path",
-                                "usage_page": usage_page, "usage": usage}]
-                    before = copy.deepcopy(devices)
-                    a, b = Hid(devices), Hid(devices)
-                    with self.assertLogs(level="INFO"):
-                        actual = detector(b, True)({"definitions": {}}, quiet=False)
-                    expected = detector(a, False)({"definitions": {}}, quiet=False)
-                    self.assertEqual([d.desc for d in actual], [d.desc for d in expected])
-                    self.assertEqual(devices, before)
-                    self.assertEqual((a.calls, b.calls), (1, 1))
+    def test_probe_admits_only_exact_target_and_does_not_mutate_hid_data(self):
+        fixtures = [
+            {"vendor_id": 0x4c4b, "product_id": 0x4643, "serial_number": "",
+             "usage_page": 0xff60, "usage": 0x61, "path": b"target"},
+            {"vendor_id": 0x4c4b, "product_id": 0x4643, "serial_number": "other",
+             "usage_page": 0xff60, "usage": 0x61, "path": b"nonempty"},
+            {"vendor_id": 0x4c4b, "product_id": 0x4643, "serial_number": "",
+             "usage_page": 1, "usage": 6, "path": b"wrong-usage"},
+            {"vendor_id": 0x1234, "product_id": 0x5678, "serial_number": "",
+             "usage_page": 0xff60, "usage": 0x61, "path": b"wrong-id"},
+        ]
+        before = copy.deepcopy(fixtures)
+        with self.assertLogs(level="INFO"):
+            found = detector(Hid(fixtures), True)({"definitions": {}}, quiet=False)
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].desc["path"], b"target")
+        self.assertEqual(found[0].desc["serial_number"], ble_diagnostic.PROBE_SERIAL)
+        self.assertEqual(fixtures, before)
 
-    def test_empty_serial_is_recorded_before_filtering(self):
+    def test_empty_serial_is_recorded_and_admitted_for_probe(self):
         devices = [{"vendor_id": 0x4c4b, "product_id": 0x4643, "serial_number": "",
                     "usage_page": 0xff60, "usage": 0x61, "path": b"ble"}]
         with self.assertLogs(level="INFO") as captured:
             found = detector(Hid(devices), True)({"definitions": {}}, quiet=False)
-        self.assertFalse(found)
+        self.assertEqual(len(found), 1)
         self.assertTrue(any('"serial_number": ""' in row for row in captured.output))
+        self.assertTrue(any("BLE_DIAG_PROBE_ADMIT" in row for row in captured.output))
 
     def test_application_settings_are_isolated(self):
         import json
         config = json.loads((ROOT / "src/build/settings/base.json").read_text(encoding="utf-8"))
-        self.assertEqual(config["app_name"], "Vial BLE Diagnostic")
+        self.assertEqual(config["app_name"], "Vial BLE Probe")
         self.assertEqual(config["version"], "0.7.5")
         requirement = (ROOT / "requirements.txt").read_text(encoding="utf-8")
         self.assertIn("88d8983b3dc65b9ef84238abe3f46004b0ef2fd0", requirement)
         window = (ROOT / "src/main/python/main_window.py").read_text(encoding="utf-8")
         self.assertIn('"diagnostic-settings.ini"), QSettings.IniFormat)', window)
         self.assertNotIn('QSettings("Vial", "Vial")', window)
+        vial_device = (ROOT / "src/main/python/vial_device.py").read_text(encoding="utf-8")
+        self.assertIn("BLE_DIAG_OPEN_OK", vial_device)
+        self.assertIn("BLE_DIAG_OPEN_FAILED", vial_device)
 
 
 if __name__ == "__main__":

@@ -29,7 +29,7 @@ jobs:
         with:
           python-version: '3.6.8'
           architecture: x64
-      - name: Add logging without changing discovery
+      - name: Add narrow empty-serial BLE probe and logging
         run: |
           python task-source/diagnostics/vial075/prepare.py vial
           python task-source/diagnostics/vial075/test_diagnostic.py vial
@@ -53,7 +53,7 @@ jobs:
       - name: Smoke-test frozen app on Windows
         working-directory: vial
         run: |
-          $diagnosticExe = Join-Path $PWD 'target/Vial BLE Diagnostic/Vial BLE Diagnostic.exe'
+          $diagnosticExe = Join-Path $PWD 'target/Vial BLE Probe/Vial BLE Probe.exe'
           $diagnosticProcess = Start-Process -FilePath $diagnosticExe -PassThru
           Start-Sleep -Seconds 8
           if ($diagnosticProcess.HasExited) { throw "Diagnostic app exited early: $($diagnosticProcess.ExitCode)" }
@@ -64,7 +64,7 @@ jobs:
       - name: Package application and corresponding source
         working-directory: vial
         run: |
-          $bundle = 'target/Vial BLE Diagnostic'
+          $bundle = 'target/Vial BLE Probe'
           Copy-Item COPYING "$bundle/COPYING"
           Copy-Item ../task-source/diagnostics/vial075/README-ja.txt "$bundle/README-ja.txt"
           Copy-Item diagnostic-dependencies.txt "$bundle/diagnostic-dependencies.txt"
@@ -72,13 +72,13 @@ jobs:
           Copy-Item ../task-source/diagnostics/vial075/*.py "$bundle/diagnostic-source/"
           Copy-Item ../task-source/.github/workflows/vial-ble-diagnostic.yml "$bundle/diagnostic-source/"
           git archive --format=zip --output="$bundle/diagnostic-source/vial-0.7.5-upstream.zip" HEAD
-          Compress-Archive -Path $bundle -DestinationPath ../Vial-0.7.5-BLE-Diagnostic-win.zip
-          Get-FileHash ../Vial-0.7.5-BLE-Diagnostic-win.zip -Algorithm SHA256
+          Compress-Archive -Path $bundle -DestinationPath ../Vial-0.7.5-BLE-Probe-win.zip
+          Get-FileHash ../Vial-0.7.5-BLE-Probe-win.zip -Algorithm SHA256
       - name: Upload portable diagnostic
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: Vial-0.7.5-BLE-Diagnostic-win.zip
-          path: Vial-0.7.5-BLE-Diagnostic-win.zip
+          name: Vial-0.7.5-BLE-Probe-win.zip
+          path: Vial-0.7.5-BLE-Probe-win.zip
           archive: false
           if-no-files-found: error
       - name: Expose failure diagnostics through Checks API
@@ -87,7 +87,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $details = ''
-          foreach ($logPath in @('vial/dependency-install.log', 'vial/freeze.log', 'vial/target/Vial BLE Diagnostic/vial-ble-diagnostic.log')) {
+          foreach ($logPath in @('vial/dependency-install.log', 'vial/freeze.log', 'vial/target/Vial BLE Probe/vial-ble-diagnostic.log')) {
             if (Test-Path $logPath) {
               $details += "`n$logPath`n" + (Get-Content $logPath -Raw)
             }
